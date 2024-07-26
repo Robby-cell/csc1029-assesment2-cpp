@@ -124,7 +124,8 @@ class ImageRecord {
 
   inline auto to_string() const noexcept -> std::string {
     return std::format("Title: {}, Description: {}, Genre: {}, Date taken: {}",
-                       title_, description_, genre_.to_string(), date_taken_);
+                       title_, description_, genre_.to_string(),
+                       date_taken_.to_string());
   }
   explicit inline operator std::string() const noexcept { return to_string(); }
 
@@ -151,7 +152,7 @@ class ImageRecord {
     return description_;
   }
   constexpr inline auto get_genre() const noexcept -> Genre { return genre_; }
-  constexpr inline auto get_date_taken() const noexcept -> date::Date {
+  constexpr inline auto get_date_taken() const noexcept -> date::DateTime {
     return date_taken_;
   }
   constexpr inline auto get_thumbnail_path() const noexcept
@@ -161,7 +162,7 @@ class ImageRecord {
 
   constexpr explicit inline ImageRecord(std::string title,
                                         std::string description, Genre genre,
-                                        date::Date time,
+                                        date::DateTime time,
                                         std::filesystem::path thumbnail_path)
       : title_(std::move(title)),
         description_(std::move(description)),
@@ -176,14 +177,14 @@ class ImageRecord {
                                 const ImageRecord& image) -> std::ostream& {
     std::print(os, "Title: {}, Description: {}, Genre: {}, Date taken: {}",
                image.title_, image.description_, image.genre_.to_string(),
-               image.date_taken_);
+               image.date_taken_.to_string());
     return os;
   }
 
   std::string title_;
   std::string description_;
   std::filesystem::path thumbnail_path_;
-  date::Date date_taken_;
+  date::DateTime date_taken_;
   std::size_t id_;
   Genre genre_;
 };

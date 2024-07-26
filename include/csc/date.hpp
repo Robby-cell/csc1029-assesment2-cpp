@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <format>
 #include <ostream>
 #include <ratio>
 
@@ -17,6 +18,12 @@ concept Streamable = requires(Type& os, PrintMe p) {
 
 class Time {
  public:
+  constexpr inline Time(std::uint32_t ms) : ms_{ms} {  // NOLINT
+    if (ms >= milliseconds_per_day::num) {
+      throw std::out_of_range{"Time out of range"};
+    }
+  }
+
   // NOLINTBEGIN
   using millisecond = std::ratio<1>;
 
@@ -42,10 +49,8 @@ class Time {
   static_assert(milliseconds_per_hour::num == 3600000);
   static_assert(milliseconds_per_day::num == 86400000);
 
-  explicit constexpr Time(uint32_t ms = 0U) : ms_{ms} {
-    if (ms >= milliseconds_per_day::num) {
-      throw std::out_of_range{"Time out of range"};
-    }
+  inline auto to_string() const noexcept -> std::string {
+    return TimeSplit{ms_}.to_string();
   }
 
  private:
@@ -53,8 +58,6 @@ class Time {
   struct TimeSplit {
    public:
     constexpr explicit TimeSplit(uint32_t ms) {
-      days_ = ms / milliseconds_per_day::num;
-      ms %= milliseconds_per_day::num;
       hours_ = ms / milliseconds_per_hour::num;
       ms %= milliseconds_per_hour::num;
       minutes_ = ms / milliseconds_per_minute::num;
@@ -64,7 +67,6 @@ class Time {
       milliseconds_ = ms;
     }
 
-    constexpr inline auto get_days() const noexcept -> u8 { return days_; }
     constexpr inline auto get_hours() const noexcept -> u8 { return hours_; }
     constexpr inline auto get_minutes() const noexcept -> u8 {
       return minutes_;
@@ -79,8 +81,7 @@ class Time {
     template <typename Stream>
       requires(Streamable<Stream, u8> and Streamable<Stream, const char*>)
     auto print(Stream& os) const -> Stream& {
-      return os << static_cast<std::uint32_t>(days_) << "d "
-                << static_cast<std::uint32_t>(hours_) << "h "
+      return os << static_cast<std::uint32_t>(hours_) << "h "
                 << static_cast<std::uint32_t>(minutes_) << "m "
                 << static_cast<std::uint32_t>(seconds_) << "s "
                 << static_cast<std::uint32_t>(milliseconds_) << "ms";
@@ -95,19 +96,53 @@ class Time {
       return time.print(os);
     }
 
+    constexpr inline auto total_time_ms() const noexcept -> std::uint32_t {
+      return (hours_ * milliseconds_per_hour::num) +
+             (minutes_ * milliseconds_per_minute::num) +
+             (seconds_ * milliseconds_per_second::num) + milliseconds_;
+    }
+
+    inline auto to_string() const noexcept -> std::string {
+      return std::format("{}h {}min {}s {}ms", hours_, minutes_, seconds_,
+                         milliseconds_);
+    }
+
    private:
-    u8 days_;
     u8 hours_;
     u8 minutes_;
     u8 seconds_;
     u8 milliseconds_;
   };
+
+ public:
+  friend inline auto operator<(const Time& self,
+                               const Time& other) noexcept -> bool {
+    return self.ms_ < other.ms_;
+  }
+  friend inline auto operator<=(const Time& self,
+                                const Time& other) noexcept -> bool {
+    return self.ms_ <= other.ms_;
+  }
+  friend inline auto operator>(const Time& self,
+                               const Time& other) noexcept -> bool {
+    return self.ms_ > other.ms_;
+  }
+  friend inline auto operator>=(const Time& self,
+                                const Time& other) noexcept -> bool {
+    return self.ms_ >= other.ms_;
+  }
+  friend inline auto operator==(const Time& self,
+                                const Time& other) noexcept -> bool {
+    return self.ms_ == other.ms_;
+  }
+
+ private:
   friend inline auto operator<<(std::ostream& os,
                                 const Time& time) -> std::ostream& {
     const TimeSplit my_time{time.ms_};
-    return os << my_time.get_days() << "d " << my_time.get_hours() << "h "
-              << my_time.get_minutes() << "m " << my_time.get_seconds() << "s "
-              << my_time.get_milliseconds() << "ms";
+    return os << my_time.get_hours() << "h " << my_time.get_minutes() << "m "
+              << my_time.get_seconds() << "s " << my_time.get_milliseconds()
+              << "ms";
   }
 
   uint32_t ms_{0};
@@ -115,6 +150,39 @@ class Time {
 
 class DateTime {
  public:
+  constexpr inline DateTime(std::chrono::year_month_day date, Time time)
+      : date_{date}, time_{time} {}
+
+  friend inline auto operator<<(std::ostream& os,
+                                const DateTime& date_time) -> std::ostream& {
+    return os << date_time.date_ << ' ' << date_time.time_;
+  }
+
+  friend auto operator<(const DateTime& self,
+                        const DateTime& other) noexcept -> bool {
+    return (self.date_ < other.date_) and (self.time_ < other.time_);
+  }
+  friend auto operator<=(const DateTime& self,
+                         const DateTime& other) noexcept -> bool {
+    return (self.date_ <= other.date_) and (self.time_ <= other.time_);
+  }
+  friend auto operator>(const DateTime& self,
+                        const DateTime& other) noexcept -> bool {
+    return (self.date_ > other.date_) and (self.time_ > other.time_);
+  }
+  friend auto operator>=(const DateTime& self,
+                         const DateTime& other) noexcept -> bool {
+    return (self.date_ >= other.date_) and (self.time_ >= other.time_);
+  }
+  friend auto operator==(const DateTime& self,
+                         const DateTime& other) noexcept -> bool {
+    return (self.date_ == other.date_) and (self.time_ == other.time_);
+  }
+
+  inline auto to_string() const noexcept -> std::string {
+    return std::format("{:%F} {}", date_, time_.to_string());
+  }
+
  private:
   std::chrono::year_month_day date_;
   Time time_;
@@ -146,13 +214,6 @@ struct Hour {
                 static_cast<std::uint32_t>(Time::milliseconds_per_hour::num)};
   }
 };
-struct Day {
-  std::uint32_t value_;
-  consteval operator Time() const noexcept {
-    return Time{value_ *
-                static_cast<std::uint32_t>(Time::milliseconds_per_day::num)};
-  }
-};
 // NOLINTEND
 
 namespace literals {
@@ -160,42 +221,27 @@ consteval auto operator"" _ms(unsigned long long ms) noexcept -> Milli {
   return Milli(static_cast<std::int32_t>(ms));
 }
 consteval auto operator"" _s(unsigned long long s) noexcept -> Second {
-  return Second(static_cast<std::uint32_t>(s) *
-                Time::milliseconds_per_second::num);
+  return Second(static_cast<std::uint32_t>(s));
 }
 consteval auto operator"" _m(unsigned long long mins) noexcept -> Minute {
-  return Minute(static_cast<std::uint32_t>(mins) *
-                Time::milliseconds_per_minute::num);
+  return Minute(static_cast<std::uint32_t>(mins));
 }
 consteval auto operator"" _h(unsigned long long hours) noexcept -> Hour {
-  return Hour(static_cast<std::uint32_t>(hours) *
-              Time::milliseconds_per_hour::num);
-}
-consteval auto operator"" _d(unsigned long long days) noexcept -> Day {
-  return Day(static_cast<std::uint32_t>(days) *
-             Time::milliseconds_per_day::num);
+  return Hour(static_cast<std::uint32_t>(hours));
 }
 }  // namespace literals
 
-consteval auto operator/(Day&& day, Hour&& hour) noexcept -> Hour {
-  return Hour{
-      (day.value_ * static_cast<std::uint32_t>(Time::minutes_per_hour::num)) +
-      hour.value_};
-}
 consteval auto operator/(Hour&& hour, Minute&& minute) noexcept -> Minute {
-  return Minute{(hour.value_ *
-                 static_cast<std::uint32_t>(Time::seconds_per_minute::num)) +
-                minute.value_};
+  return Minute{static_cast<std::uint32_t>(
+      (hour.value_ * Time::minutes_per_hour::num) + minute.value_)};
 }
 consteval auto operator/(Minute&& minute, Second&& second) noexcept -> Second {
-  return Second{(minute.value_ * static_cast<std::uint32_t>(
-                                     Time::milliseconds_per_minute::num)) +
-                second.value_};
+  return Second{static_cast<std::uint32_t>(
+      (minute.value_ * Time::seconds_per_minute::num) + second.value_)};
 }
 consteval auto operator/(Second&& second, Milli&& milli) noexcept -> Milli {
-  return Milli{(second.value_ * static_cast<std::uint32_t>(
-                                    Time::milliseconds_per_second::num)) +
-               milli.value_};
+  return Milli{static_cast<std::uint32_t>(
+      (second.value_ * Time::milliseconds_per_second::num) + milli.value_)};
 }
 
 }  // namespace csc::date

@@ -60,9 +60,9 @@ class ImageManager {
     return std::move(out);
   }
 
-  NO_DISCARD inline auto search_between_dates(
-      const date::Date& start,
-      const date::Date& end) const noexcept -> std::vector<const ImageRecord*> {
+  NO_DISCARD inline auto search_between_dates(const date::DateTime& start,
+                                              const date::DateTime& end)
+      const noexcept -> std::vector<const ImageRecord*> {
     std::vector<const ImageRecord*> out;
     for (const auto& image : album_) {
       const auto date = image.get_date_taken();
