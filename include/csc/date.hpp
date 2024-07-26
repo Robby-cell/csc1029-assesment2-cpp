@@ -231,17 +231,31 @@ consteval auto operator"" _h(unsigned long long hours) noexcept -> Hour {
 }
 }  // namespace literals
 
-consteval auto operator/(Hour&& hour, Minute&& minute) noexcept -> Minute {
+constexpr auto operator/(Hour&& hour, Minute&& minute) noexcept -> Minute {
   return Minute{static_cast<std::uint32_t>(
       (hour.value_ * Time::minutes_per_hour::num) + minute.value_)};
 }
-consteval auto operator/(Minute&& minute, Second&& second) noexcept -> Second {
+constexpr auto operator/(Minute&& minute, Second&& second) noexcept -> Second {
   return Second{static_cast<std::uint32_t>(
       (minute.value_ * Time::seconds_per_minute::num) + second.value_)};
 }
-consteval auto operator/(Second&& second, Milli&& milli) noexcept -> Milli {
+constexpr auto operator/(Second&& second, Milli&& milli) noexcept -> Milli {
   return Milli{static_cast<std::uint32_t>(
       (second.value_ * Time::milliseconds_per_second::num) + milli.value_)};
+}
+constexpr auto operator/(Hour&& hour, Second&& second) noexcept -> Second {
+  return Second{static_cast<std::uint32_t>(
+      (hour.value_ * Time::milliseconds_per_hour::num /
+       Time::milliseconds_per_second::num) +
+      second.value_)};
+}
+constexpr auto operator/(Minute&& minute, Milli&& milli) noexcept -> Milli {
+  return Milli{static_cast<std::uint32_t>(
+      (minute.value_ * Time::milliseconds_per_minute::num) + milli.value_)};
+}
+constexpr auto operator/(Hour&& hour, Milli&& milli) noexcept -> Milli {
+  return Milli{static_cast<std::uint32_t>(
+      (hour.value_ * Time::milliseconds_per_hour::num) + milli.value_)};
 }
 
 }  // namespace csc::date
