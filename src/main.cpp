@@ -4,6 +4,7 @@
 
 #include "csc/ImageManager.hpp"
 #include "csc/ImageRecord.hpp"
+#include "csc/RequiredImages.hpp"
 #include "csc/date.hpp"
 
 using namespace std::literals::chrono_literals;
@@ -16,18 +17,7 @@ constexpr inline auto WindowHeight{600U};
 auto main() -> int {
   sf::RenderWindow window(sf::VideoMode(WindowWidth, WindowHeight), Title);
 
-  csc::ImageManager manager{
-      csc::ImageRecord{"Title1",
-                       "Description",
-                       csc::ImageRecord::Genre::Food(),
-                       {2024y / std::chrono::February / 3d, 3_h},
-                       "path/to/image"},
-      csc::ImageRecord{"Title2",
-                       "Description",
-                       csc::ImageRecord::Genre::Astronomy(),
-                       {2024y / std::chrono::April / 4d, 3_h / 20_m / 5_s},
-                       "path/to/image"},
-  };
+  csc::ImageManager manager{csc::required::manager_with_required_images()};
   manager.add_image(csc::ImageRecord(
       "Title3", "Description", csc::ImageRecord::Genre::Food(),
       {2024y / std::chrono::March / 3d, 2_h / 24_m}, "path/to/image"));
@@ -37,6 +27,11 @@ auto main() -> int {
 
   auto images = manager.search_title("Title1");
   std::cout << images;
+
+  auto found{
+      manager.search_between_dates({2023y / std::chrono::January / 2d, 0_h},
+                                   {2023y / std::chrono::January / 5d, 0_h})};
+  std::cout << found << '\n';
 
   std::cout << "\nAll images:\n" << manager;
 
