@@ -7,6 +7,8 @@
 #include <ostream>
 #include <ratio>
 
+#include "csc/core.h"
+
 namespace csc::date {
 using Date = std::chrono::year_month_day;
 
@@ -18,7 +20,7 @@ concept Streamable = requires(Type& os, PrintMe p) {
 
 class Time {
  public:
-  constexpr inline Time(std::uint32_t ms) : ms_{ms} {  // NOLINT
+  MAYBE_CONSTEXPR inline Time(std::uint32_t ms) : ms_{ms} {  // NOLINT
     if (ms >= milliseconds_per_day::num) {
       throw std::out_of_range{"Time out of range"};
     }
@@ -57,7 +59,7 @@ class Time {
   using u8 = std::uint8_t;  // NOLINT
   struct TimeSplit {
    public:
-    constexpr explicit TimeSplit(uint32_t ms) {
+    MAYBE_CONSTEXPR explicit TimeSplit(uint32_t ms) {
       hours_ = ms / milliseconds_per_hour::num;
       ms %= milliseconds_per_hour::num;
       minutes_ = ms / milliseconds_per_minute::num;
@@ -67,14 +69,16 @@ class Time {
       milliseconds_ = ms;
     }
 
-    constexpr inline auto get_hours() const noexcept -> u8 { return hours_; }
-    constexpr inline auto get_minutes() const noexcept -> u8 {
+    MAYBE_CONSTEXPR inline auto get_hours() const noexcept -> u8 {
+      return hours_;
+    }
+    MAYBE_CONSTEXPR inline auto get_minutes() const noexcept -> u8 {
       return minutes_;
     }
-    constexpr inline auto get_seconds() const noexcept -> u8 {
+    MAYBE_CONSTEXPR inline auto get_seconds() const noexcept -> u8 {
       return seconds_;
     }
-    constexpr inline auto get_milliseconds() const noexcept -> u8 {
+    MAYBE_CONSTEXPR inline auto get_milliseconds() const noexcept -> u8 {
       return milliseconds_;
     }
 
@@ -96,7 +100,8 @@ class Time {
       return time.print(os);
     }
 
-    constexpr inline auto total_time_ms() const noexcept -> std::uint32_t {
+    MAYBE_CONSTEXPR inline auto total_time_ms() const noexcept
+        -> std::uint32_t {
       return (hours_ * milliseconds_per_hour::num) +
              (minutes_ * milliseconds_per_minute::num) +
              (seconds_ * milliseconds_per_second::num) + milliseconds_;
@@ -150,7 +155,7 @@ class Time {
 
 class DateTime {
  public:
-  constexpr inline DateTime(std::chrono::year_month_day date, Time time)
+  MAYBE_CONSTEXPR inline DateTime(std::chrono::year_month_day date, Time time)
       : date_{date}, time_{time} {}
 
   friend inline auto operator<<(std::ostream& os,
@@ -231,29 +236,34 @@ consteval auto operator"" _h(unsigned long long hours) noexcept -> Hour {
 }
 }  // namespace literals
 
-constexpr auto operator/(Hour&& hour, Minute&& minute) noexcept -> Minute {
+MAYBE_CONSTEXPR auto operator/(Hour&& hour,
+                               Minute&& minute) noexcept -> Minute {
   return Minute{static_cast<std::uint32_t>(
       (hour.value_ * Time::minutes_per_hour::num) + minute.value_)};
 }
-constexpr auto operator/(Minute&& minute, Second&& second) noexcept -> Second {
+MAYBE_CONSTEXPR auto operator/(Minute&& minute,
+                               Second&& second) noexcept -> Second {
   return Second{static_cast<std::uint32_t>(
       (minute.value_ * Time::seconds_per_minute::num) + second.value_)};
 }
-constexpr auto operator/(Second&& second, Milli&& milli) noexcept -> Milli {
+MAYBE_CONSTEXPR auto operator/(Second&& second,
+                               Milli&& milli) noexcept -> Milli {
   return Milli{static_cast<std::uint32_t>(
       (second.value_ * Time::milliseconds_per_second::num) + milli.value_)};
 }
-constexpr auto operator/(Hour&& hour, Second&& second) noexcept -> Second {
+MAYBE_CONSTEXPR auto operator/(Hour&& hour,
+                               Second&& second) noexcept -> Second {
   return Second{static_cast<std::uint32_t>(
       (hour.value_ * Time::milliseconds_per_hour::num /
        Time::milliseconds_per_second::num) +
       second.value_)};
 }
-constexpr auto operator/(Minute&& minute, Milli&& milli) noexcept -> Milli {
+MAYBE_CONSTEXPR auto operator/(Minute&& minute,
+                               Milli&& milli) noexcept -> Milli {
   return Milli{static_cast<std::uint32_t>(
       (minute.value_ * Time::milliseconds_per_minute::num) + milli.value_)};
 }
-constexpr auto operator/(Hour&& hour, Milli&& milli) noexcept -> Milli {
+MAYBE_CONSTEXPR auto operator/(Hour&& hour, Milli&& milli) noexcept -> Milli {
   return Milli{static_cast<std::uint32_t>(
       (hour.value_ * Time::milliseconds_per_hour::num) + milli.value_)};
 }

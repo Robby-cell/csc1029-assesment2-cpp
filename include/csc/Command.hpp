@@ -8,18 +8,20 @@ class UserInterface;
 namespace command {
 
 class Command {
- private:
+ public:
   enum class Tag : unsigned char {
     Exit,
   };
 
- public:
   static auto get(const UserInterface& ui) -> Command;
   auto execute(const UserInterface& ui) -> void;
 
   inline auto is_exit() const noexcept -> bool { return false; }
 
  private:
+  inline Command() noexcept = default;
+  explicit inline Command(Tag tag) noexcept : tag_{tag} {}
+
   friend class ::csc::UserInterface;
 
   Tag tag_;

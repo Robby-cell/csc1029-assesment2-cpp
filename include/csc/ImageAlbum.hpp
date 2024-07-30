@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "csc/ImageRecord.hpp"
+#include "csc/core.h"
 
 namespace csc {
 
@@ -23,10 +24,11 @@ class ImageAlbum {
   explicit inline ImageAlbum(Args&&... images) noexcept
       : images_{std::forward<Args>(images)...} {}
 
-  constexpr inline auto get_images() const noexcept -> const ImageCollection& {
+  MAYBE_CONSTEXPR inline auto get_images() const noexcept
+      -> const ImageCollection& {
     return images_;
   }
-  constexpr inline auto get_images() noexcept -> ImageCollection& {
+  MAYBE_CONSTEXPR inline auto get_images() noexcept -> ImageCollection& {
     return images_;
   }
 
@@ -58,9 +60,7 @@ class ImageAlbum {
   inline auto is_empty() const noexcept -> bool { return images_.empty(); }
 
   explicit inline operator std::string() const noexcept {
-    constexpr auto AssumedSize{20};
     std::string result;
-    result.reserve(images_.size() * AssumedSize);
 
     for (const auto& image : images_) {
       result += image.to_string() + "\n";
@@ -69,8 +69,8 @@ class ImageAlbum {
     return result;
   }
 
-  inline auto begin() const noexcept { return images_.begin(); }
-  inline auto end() const noexcept { return images_.end(); }
+  MAYBE_CONSTEXPR inline auto begin() const noexcept { return images_.begin(); }
+  MAYBE_CONSTEXPR inline auto end() const noexcept { return images_.end(); }
 
  private:
   friend auto operator<<(std::ostream& os,

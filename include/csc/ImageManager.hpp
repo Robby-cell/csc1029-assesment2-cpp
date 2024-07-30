@@ -8,6 +8,7 @@
 
 #include "csc/ImageAlbum.hpp"
 #include "csc/ImageRecord.hpp"
+#include "csc/core.h"
 
 namespace csc {
 
@@ -20,11 +21,11 @@ class ImageManager {
   explicit inline ImageManager(Args&&... images) noexcept
       : album_(std::forward<ImageRecord>(images)...) {}
 
-  constexpr inline auto add_image(ImageRecord&& image) noexcept -> void {
+  inline auto add_image(ImageRecord&& image) noexcept -> void {
     album_.emplace(std::move(image));
   }
   template <typename... Args>
-  constexpr inline auto add_image(Args&&... args) noexcept -> void {
+  inline auto add_image(Args&&... args) noexcept -> void {
     album_.emplace(std::forward<Args>(args)...);
   }
 
@@ -73,12 +74,12 @@ class ImageManager {
     return std::move(out);
   }
 
-  NO_DISCARD constexpr inline auto get_all_images() const noexcept
+  NO_DISCARD MAYBE_CONSTEXPR inline auto get_all_images() const noexcept
       -> const ImageAlbum& {
     return album_;
   }
 
-  NO_DISCARD constexpr inline auto is_empty() const noexcept -> bool {
+  NO_DISCARD MAYBE_CONSTEXPR inline auto is_empty() const noexcept -> bool {
     return album_.is_empty();
   }
 

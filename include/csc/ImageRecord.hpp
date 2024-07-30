@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 
+#include "csc/core.h"
 #include "csc/date.hpp"
 
 namespace csc {
@@ -59,22 +60,23 @@ class ImageRecord {
       return Genre(Tag::Other);
     }
 
-    constexpr inline auto operator==(const Genre& other) const noexcept
+    MAYBE_CONSTEXPR inline auto operator==(const Genre& other) const noexcept
         -> bool {
       return tag_ == other.tag_;
     }
-    constexpr inline auto operator!=(const Genre& other) const noexcept
+    MAYBE_CONSTEXPR inline auto operator!=(const Genre& other) const noexcept
         -> bool {
       return tag_ != other.tag_;
     }
 
-    constexpr inline Genre(const Genre& other) noexcept = default;
-    constexpr inline Genre(Genre&& other) noexcept = default;
-    constexpr inline auto operator=(const Genre& other) noexcept -> Genre& =
-                                                                        default;
-    constexpr inline auto operator=(Genre&& other) noexcept -> Genre& = default;
+    MAYBE_CONSTEXPR inline Genre(const Genre& other) noexcept = default;
+    MAYBE_CONSTEXPR inline Genre(Genre&& other) noexcept = default;
+    MAYBE_CONSTEXPR inline auto operator=(const Genre& other) noexcept
+        -> Genre& = default;
+    MAYBE_CONSTEXPR inline auto operator=(Genre&& other) noexcept
+        -> Genre& = default;
 
-    constexpr inline auto to_string() const noexcept -> std::string_view {
+    MAYBE_CONSTEXPR inline auto to_string() const noexcept -> std::string_view {
       switch (tag_) {
         case Tag::Astronomy:
           return "Photography or imaging of astronomical objects, celestial "
@@ -109,15 +111,15 @@ class ImageRecord {
     Tag tag_;
   };
 
-  friend constexpr inline auto operator<(
+  friend MAYBE_CONSTEXPR inline auto operator<(
       const ImageRecord& self, const ImageRecord& other) noexcept -> bool {
     return self.date_taken_ < other.date_taken_;
   }
-  // friend constexpr inline auto operator==(
+  // friend MAYBE_CONSTEXPR inline auto operator==(
   //     const ImageRecord& self, const ImageRecord& other) noexcept -> bool {
   //   return self.date_taken_ == other.date_taken_;
   // }
-  // friend constexpr inline auto operator!=(
+  // friend MAYBE_CONSTEXPR inline auto operator!=(
   //     const ImageRecord& self, const ImageRecord& other) noexcept -> bool {
   //   return self.date_taken_ != other.date_taken_;
   // }
