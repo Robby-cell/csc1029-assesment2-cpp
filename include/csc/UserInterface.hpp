@@ -60,10 +60,11 @@ class UserInterface {
 template <typename, typename>
 struct Extractor;
 
-template <typename ReturnType, ComptimeString... Options>
+template <typename ReturnType, ComptimePair... Options>
 struct Extractor<ReturnType, OptionPack<Options...>> {
   using MyReturnType = ReturnType;
   using MyOptions = OptionPack<Options...>;
+  static constexpr auto Size{sizeof...(Options)};
 
   static constexpr auto options() noexcept
       -> std::span<const std::string_view> {
@@ -83,7 +84,7 @@ struct Extractor<ReturnType, OptionPack<Options...>> {
 
         auto option = std::stoull(result);
         if (option <= MyOptions::Size) {
-          return static_cast<ReturnType>(option - 1);
+          return MyOptions::value_at(option - 1);
         }
         ui.println("Number must be between 1 and {}.", MyOptions::Size);
       } catch (...) {

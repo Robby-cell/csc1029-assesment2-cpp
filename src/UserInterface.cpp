@@ -14,7 +14,9 @@ UserInterface::UserInterface() noexcept
 auto UserInterface::show_images(ImageAlbum& images) const noexcept -> void {
   enum class GetImage { Next, Previous, Exit };
   using MyExtractor =
-      Extractor<GetImage, OptionPack<"Next image", "Previous image", "Exit">>;
+      Extractor<GetImage, OptionPack<{"Next image", GetImage::Next},
+                                     {"Previous image", GetImage::Previous},
+                                     {"Exit", GetImage::Exit}>>;
 
   const ImageRecord* image = nullptr;
   try {

@@ -5,9 +5,12 @@
 using namespace csc;           // NOLINT
 using namespace csc::command;  // NOLINT
 
-using CommandOptions =
-    Extractor<Command::Tag, OptionPack<"Add image", "Search image",
-                                       "Display all images", "Exit">>;
+using Tag = Command::Tag;
+using CommandOptions = Extractor<
+    Command::Tag,
+    OptionPack<{"Add image", Tag::AddImage}, {"Search image", Tag::SearchImage},
+               {"Display all images", Tag::DisplayAllImages},
+               {"Exit", Tag::Exit}>>;
 
 auto Command::get(const UserInterface& ui) -> Command {
   return Command{CommandOptions::get(ui)};
