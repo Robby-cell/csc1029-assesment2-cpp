@@ -39,43 +39,48 @@ class ImageManager {
     return std::nullopt;
   }
 
-  NO_DISCARD inline auto search_title(const std::string_view title)
-      const noexcept -> std::vector<const ImageRecord*> {
+  NO_DISCARD inline auto search_title(
+      const std::string_view title) const noexcept -> ImageAlbum {
     std::vector<const ImageRecord*> out;
+    ImageAlbum album;
     for (const auto& image : album_) {
       if (image.get_title() == title) {
-        out.push_back(&image);
+        album.emplace(image);
       }
     }
-    return std::move(out);
+    return std::move(album);
   }
 
-  NO_DISCARD inline auto search_genre(const ImageRecord::Genre& genre)
-      const noexcept -> std::vector<const ImageRecord*> {
-    std::vector<const ImageRecord*> out;
+  NO_DISCARD inline auto search_genre(
+      const ImageRecord::Genre& genre) const noexcept -> ImageAlbum {
+    ImageAlbum album;
     for (const auto& image : album_) {
       if (image.get_genre() == genre) {
-        out.push_back(&image);
+        album.emplace(image);
       }
     }
-    return std::move(out);
+    return std::move(album);
   }
 
-  NO_DISCARD inline auto search_between_dates(const date::DateTime& start,
-                                              const date::DateTime& end)
-      const noexcept -> std::vector<const ImageRecord*> {
-    std::vector<const ImageRecord*> out;
+  NO_DISCARD inline auto search_between_dates(
+      const date::DateTime& start,
+      const date::DateTime& end) const noexcept -> ImageAlbum {
+    ImageAlbum album;
     for (const auto& image : album_) {
       const auto date = image.get_date_taken();
       if (date >= start && date <= end) {
-        out.push_back(&image);
+        album.emplace(image);
       }
     }
-    return std::move(out);
+    return std::move(album);
   }
 
   NO_DISCARD MAYBE_CONSTEXPR inline auto get_all_images() const noexcept
       -> const ImageAlbum& {
+    return album_;
+  }
+  NO_DISCARD MAYBE_CONSTEXPR inline auto get_all_images() noexcept
+      -> ImageAlbum& {
     return album_;
   }
 

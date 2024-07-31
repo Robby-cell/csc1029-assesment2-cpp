@@ -1,39 +1,34 @@
 #include "csc/Command.hpp"
 
-#include <string>
-#include <unordered_map>
-
 #include "csc/UserInterface.hpp"
 
 using namespace csc;           // NOLINT
 using namespace csc::command;  // NOLINT
 
-static inline std::unordered_map<std::string, Command::Tag> command_map{
-    {"exit", Command::Tag::Exit},
-};
+using CommandOptions =
+    Extractor<Command::Tag, OptionPack<"Add image", "Search image",
+                                       "Display all images", "Exit">>;
 
 auto Command::get(const UserInterface& ui) -> Command {
-  std::string option{};
-
-  while (true) {
-    ui.read_input(option);
-    for (auto& ch : option) {
-      ch = std::tolower(ch);
-    }
-
-    if (command_map.contains(option)) {
-      return Command{command_map.at(option)};
-    } else {
-      ui.print("Invalid command: ");
-      ui.println(option);
-    }
-  }
+  return Command{CommandOptions::get(ui)};
 }
 
-auto Command::execute(const UserInterface& ui) -> void {
+auto Command::execute(UserInterface& ui) -> void {
   switch (tag_) {
-    case Tag::Exit:
-      ui.clear_screen();
+    case Tag::AddImage: {
+      ui.add_image();
       break;
+    }
+    case Tag::SearchImage: {
+      ui.search_image();
+      break;
+    }
+    case Tag::DisplayAllImages: {
+      ui.display_all_images();
+      break;
+    }
+    case Tag::Exit: {
+      break;
+    }
   }
 }

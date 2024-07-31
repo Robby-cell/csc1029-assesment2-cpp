@@ -34,18 +34,24 @@ class ImageAlbum {
 
   inline auto get_first_image() -> const ImageRecord& {
     current_image_ = 0ULL;
-    return images_.at(current_image_++);
+    return images_.at(current_image_);
   }
 
   inline auto get_next_image() -> const ImageRecord& {
-    return images_.at(current_image_++);
+    if (current_image_ >= images_.size() - 1) {
+      throw std::out_of_range{"No next image."};
+    }
+    return images_[++current_image_];
   }
 
   inline auto get_previous_image() -> const ImageRecord& {
-    return images_.at(--current_image_);
+    if (current_image_ == 0) {
+      throw std::out_of_range{"No previous image."};
+    }
+    return images_[--current_image_];
   }
 
-  inline auto emplace(ImageRecord&& image) -> void {
+  inline auto emplace(ImageRecord image) -> void {
     auto it{
         std::lower_bound(images_.begin(), images_.end(), image, std::less{})};
     images_.insert(it, std::move(image));

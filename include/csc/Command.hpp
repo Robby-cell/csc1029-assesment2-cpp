@@ -10,17 +10,20 @@ namespace command {
 class Command {
  public:
   enum class Tag : unsigned char {
+    AddImage,
+    SearchImage,
+    DisplayAllImages,
     Exit,
   };
 
   static auto get(const UserInterface& ui) -> Command;
-  auto execute(const UserInterface& ui) -> void;
+  auto execute(UserInterface& ui) -> void;
 
-  inline auto is_exit() const noexcept -> bool { return false; }
+  inline auto is_exit() const noexcept -> bool { return tag_ == Tag::Exit; }
 
  private:
   inline Command() noexcept = default;
-  explicit inline Command(Tag tag) noexcept : tag_{tag} {}
+  constexpr explicit inline Command(Tag tag) noexcept : tag_{tag} {}
 
   friend class ::csc::UserInterface;
 
