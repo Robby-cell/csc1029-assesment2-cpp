@@ -16,6 +16,8 @@ class ImageRecord {
   static inline size_t next_id{1ULL};
 
  public:
+  using DateType = date::DateTime;
+
   class Genre {
    private:
     enum class Tag {
@@ -107,7 +109,7 @@ class ImageRecord {
       }
     }
 
-   private:
+    //  private:
     Tag tag_;
   };
 
@@ -154,7 +156,7 @@ class ImageRecord {
     return description_;
   }
   constexpr inline auto get_genre() const noexcept -> Genre { return genre_; }
-  constexpr inline auto get_date_taken() const noexcept -> date::DateTime {
+  constexpr inline auto get_date_taken() const noexcept -> DateType {
     return date_taken_;
   }
   constexpr inline auto get_thumbnail_path() const noexcept
@@ -164,7 +166,7 @@ class ImageRecord {
 
   constexpr explicit inline ImageRecord(std::string title,
                                         std::string description, Genre genre,
-                                        date::DateTime time,
+                                        DateType time,
                                         std::filesystem::path thumbnail_path)
       : title_(std::move(title)),
         description_(std::move(description)),
@@ -186,7 +188,7 @@ class ImageRecord {
   std::string title_;
   std::string description_;
   std::filesystem::path thumbnail_path_;
-  date::DateTime date_taken_;
+  DateType date_taken_;
   std::size_t id_;
   Genre genre_;
 };

@@ -26,6 +26,13 @@ class Time {
     }
   }
 
+  MAYBE_CONSTEXPR inline Time(std::size_t hour, std::size_t minute,
+                              std::size_t second, std::size_t milli) noexcept {
+    ms_ = (hour * milliseconds_per_hour::num) +
+          (minute * milliseconds_per_minute::num) +
+          (second * milliseconds_per_second::num) + milli;
+  }
+
   // NOLINTBEGIN
   using millisecond = std::ratio<1>;
 

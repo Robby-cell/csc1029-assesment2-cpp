@@ -11,7 +11,9 @@
 #include "csc/Command.hpp"
 #include "csc/ImageAlbum.hpp"
 #include "csc/ImageManager.hpp"
+#include "csc/ImageRecord.hpp"
 #include "csc/OptionPack.hpp"
+#include "csc/date.hpp"
 
 namespace csc {
 
@@ -54,16 +56,26 @@ class UserInterface {
   }
 
  private:
+  auto get_non_empty_string() const noexcept -> std::string;
+  auto get_genre() const noexcept -> ImageRecord::Genre;
+
+  auto get_year_month_day() const noexcept -> date::Date;
+  auto get_time() const noexcept -> date::Time;
+
+  auto get_date() const noexcept -> ImageRecord::DateType;
+
+  auto get_file_path() const noexcept -> std::filesystem::path;
+
   ImageManager manager_;
 };
 
-template <typename, typename>
+template <typename>
 struct Extractor;
 
-template <typename ReturnType, ComptimePair... Options>
-struct Extractor<ReturnType, OptionPack<Options...>> {
-  using MyReturnType = ReturnType;
+template <ComptimePair... Options>
+struct Extractor<OptionPack<Options...>> {
   using MyOptions = OptionPack<Options...>;
+  using ReturnType = MyOptions::ValueType;
   static constexpr auto Size{sizeof...(Options)};
 
   static constexpr auto options() noexcept
