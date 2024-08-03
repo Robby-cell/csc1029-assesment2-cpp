@@ -83,13 +83,18 @@ struct Extractor<OptionPack<Options...>> {
     return MyOptions::options();
   }
 
+  static inline auto display_options(const UserInterface& ui) noexcept -> void {
+    for (auto i : std::ranges::iota_view{0ULL, MyOptions::Size}) {
+      ui.println("{}. {}", i + 1, MyOptions::Options[i]);
+    }
+  }
+
   static inline auto get(const UserInterface& ui) noexcept -> ReturnType {
     std::string result;
 
     while (true) {
-      for (auto i : std::ranges::iota_view{0ULL, MyOptions::Size}) {
-        ui.println("{}. {}", i + 1, MyOptions::Options[i]);
-      }
+      display_options(ui);
+
       ui.println("Enter a number between 1 and {}.", MyOptions::Size);
       try {
         ui.read_input(result);

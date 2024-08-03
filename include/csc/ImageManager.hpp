@@ -44,7 +44,18 @@ class ImageManager {
     std::vector<const ImageRecord*> out;
     ImageAlbum album;
     for (const auto& image : album_) {
-      if (image.get_title() == title) {
+      if (image.get_title().find(title) != std::string_view::npos) {
+        album.emplace(image);
+      }
+    }
+    return std::move(album);
+  }
+  NO_DISCARD inline auto search_description(
+      const std::string_view title) const noexcept -> ImageAlbum {
+    std::vector<const ImageRecord*> out;
+    ImageAlbum album;
+    for (const auto& image : album_) {
+      if (image.get_description().find(title) != std::string_view::npos) {
         album.emplace(image);
       }
     }
@@ -86,6 +97,10 @@ class ImageManager {
 
   NO_DISCARD MAYBE_CONSTEXPR inline auto is_empty() const noexcept -> bool {
     return album_.is_empty();
+  }
+
+  NO_DISCARD MAYBE_CONSTEXPR inline auto size() const noexcept -> std::size_t {
+    return album_.size();
   }
 
  private:

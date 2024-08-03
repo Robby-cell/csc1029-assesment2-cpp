@@ -78,6 +78,10 @@ class ImageAlbum {
   MAYBE_CONSTEXPR inline auto begin() const noexcept { return images_.begin(); }
   MAYBE_CONSTEXPR inline auto end() const noexcept { return images_.end(); }
 
+  MAYBE_CONSTEXPR inline auto size() const noexcept -> std::size_t {
+    return images_.size();
+  }
+
  private:
   friend auto operator<<(std::ostream& os,
                          const ImageAlbum& album) -> std::ostream&;

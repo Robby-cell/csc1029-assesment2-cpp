@@ -159,18 +159,48 @@ auto UserInterface::search_image() -> void {
 
   switch (result) {
     case SearchCriteria::Id: {
+      println("Enter the id of the image.");
+      auto id{read_number_between(*this, 1ULL, manager_.size())};
+
+      const auto image = manager_.search_id(id);
+      if (image) {
+        show_image(**image);
+      }
+      wait_for_enter();
       break;
     }
     case SearchCriteria::Title: {
+      println("Enter the title of the image.");
+      auto title{get_non_empty_string()};
+
+      auto images = manager_.search_title(title);
+      show_images(images);
       break;
     }
     case SearchCriteria::Description: {
+      println("Enter the description of the image.");
+      auto title{get_non_empty_string()};
+
+      auto images = manager_.search_description(title);
+      show_images(images);
       break;
     }
     case SearchCriteria::Genre: {
+      println("Enter the genre of the image.");
+      auto genre{get_genre()};
+      auto images = manager_.search_genre(genre);
+      show_images(images);
       break;
     }
     case SearchCriteria::Date: {
+      println("Enter the start date of the image.");
+      auto start{get_date()};
+
+      println("Enter the end date of the image.");
+      auto end{get_date()};
+
+      auto images = manager_.search_between_dates(start, end);
+      show_images(images);
       break;
     }
   }
