@@ -1,5 +1,3 @@
-
-
 cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -29,9 +27,13 @@ project(assessment2)
 
 # MY_SOURCES is defined to be a list of all the source files for my game
 # DON'T ADD THE SOURCES BY HAND, they are already added with this macro
-file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+set(MY_SOURCES
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/Command.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/Console.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/RequiredImages.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/UserInterface.cpp")
 
-add_executable("${CMAKE_PROJECT_NAME}")
+add_library("${CMAKE_PROJECT_NAME}" STATIC)
 
 set_property(TARGET "${CMAKE_PROJECT_NAME}" PROPERTY CXX_STANDARD 23)
 
@@ -58,8 +60,14 @@ endif()
 
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 
+add_executable(QUBImages src/QUBImages.cpp)
+target_link_libraries(QUBImages PRIVATE "${CMAKE_PROJECT_NAME}")
+
+add_executable(QUBMediaImages src/QUBMediaImages.cpp)
+target_link_libraries(QUBMediaImages PRIVATE "${CMAKE_PROJECT_NAME}")
+
 find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
+target_link_libraries(QUBMediaImages PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
 
 # If you want SFML to provide an implementation of main():
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE sfml-main)
+target_link_libraries(QUBMediaImages PRIVATE sfml-main)

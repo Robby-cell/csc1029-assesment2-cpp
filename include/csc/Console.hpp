@@ -11,14 +11,14 @@ class Console : public UserInterface {
   Console() = default;
   ~Console() override = default;
 
-  void put(std::string_view message) const override;
-  void putln(std::string_view message) const override;
+  void put(std::string_view message) override;
+  void putln(std::string_view message) override;
 
-  void show_image(const ImageRecord& image) const override;
-  void clear_screen() const override;
-  std::string& read_input(std::string& buf) const override;  // NOLINT
+  void show_image(const ImageRecord& image) override;
+  void clear_screen() override;
+  std::string& read_input(std::string& buf) override;  // NOLINT
 
-  void wait_for_enter() const noexcept override;
+  void wait_for_enter() noexcept override;
 
  private:
 };

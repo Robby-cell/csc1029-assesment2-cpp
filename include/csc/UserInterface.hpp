@@ -22,21 +22,21 @@ class UserInterface {
   UserInterface() noexcept;
   virtual ~UserInterface() noexcept = default;
 
-  virtual void put(std::string_view message) const = 0;
-  virtual void putln(std::string_view message) const = 0;
-  virtual void show_image(const ImageRecord& image) const = 0;
-  virtual void clear_screen() const = 0;
-  virtual std::string& read_input(std::string& buf) const = 0;  // NOLINT
+  virtual void put(std::string_view message) = 0;
+  virtual void putln(std::string_view message) = 0;
+  virtual void show_image(const ImageRecord& image) = 0;
+  virtual void clear_screen() = 0;
+  virtual std::string& read_input(std::string& buf) = 0;  // NOLINT
 
-  virtual void wait_for_enter() const noexcept = 0;
+  virtual void wait_for_enter() noexcept = 0;
 
-  auto show_images(ImageAlbum& images) const noexcept -> void;
+  auto show_images(ImageAlbum& images) noexcept -> void;
 
   auto run() -> void;
 
-  auto display_image_with_id(std::size_t id) const noexcept -> void;
+  auto display_image_with_id(std::size_t id) noexcept -> void;
 
-  auto display_images_with_title(std::string_view title) const noexcept -> void;
+  auto display_images_with_title(std::string_view title) noexcept -> void;
 
   auto add_image() -> void;
   auto search_image() -> void;
@@ -44,27 +44,27 @@ class UserInterface {
 
   template <typename... Args>
   inline auto print(const std::format_string<Args...> fmt,
-                    Args&&... args) const noexcept -> void {
+                    Args&&... args) noexcept -> void {
     auto str = std::format(fmt, std::forward<Args>(args)...);
     put(str);
   }
   template <typename... Args>
   inline auto println(const std::format_string<Args...> fmt,
-                      Args&&... args) const noexcept -> void {
+                      Args&&... args) noexcept -> void {
     auto str = std::format(fmt, std::forward<Args>(args)...);
     putln(str);
   }
 
  private:
-  auto get_non_empty_string() const noexcept -> std::string;
-  auto get_genre() const noexcept -> ImageRecord::Genre;
+  auto get_non_empty_string() noexcept -> std::string;
+  auto get_genre() noexcept -> ImageRecord::Genre;
 
-  auto get_year_month_day() const noexcept -> date::Date;
-  auto get_time() const noexcept -> date::Time;
+  auto get_year_month_day() noexcept -> date::Date;
+  auto get_time() noexcept -> date::Time;
 
-  auto get_date() const noexcept -> ImageRecord::DateType;
+  auto get_date() noexcept -> ImageRecord::DateType;
 
-  auto get_file_path() const noexcept -> std::filesystem::path;
+  auto get_file_path() noexcept -> std::filesystem::path;
 
   ImageManager manager_;
 };
@@ -83,13 +83,13 @@ struct Extractor<OptionPack<Options...>> {
     return MyOptions::options();
   }
 
-  static inline auto display_options(const UserInterface& ui) noexcept -> void {
+  static inline auto display_options(UserInterface& ui) noexcept -> void {
     for (auto i : std::ranges::iota_view{0ULL, MyOptions::Size}) {
       ui.println("{}. {}", i + 1, MyOptions::Options[i]);
     }
   }
 
-  static inline auto get(const UserInterface& ui) noexcept -> ReturnType {
+  static inline auto get(UserInterface& ui) noexcept -> ReturnType {
     std::string result;
 
     while (true) {
