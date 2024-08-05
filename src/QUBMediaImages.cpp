@@ -1,5 +1,5 @@
 #include <array>
-#include <iostream>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -7,6 +7,7 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "csc/ImageRecord.hpp"
+#include "csc/OptionPack.hpp"
 #include "csc/UserInterface.hpp"
 #include "imgui.h"
 
@@ -147,6 +148,10 @@ constexpr inline auto GetGlslVersion() -> const char* {
 }
 
 class MediaImages : public csc::UserInterface {
+ private:
+  using ImageAtlas = std::unordered_map<std::string, render::Image>;
+  static inline ImageAtlas images;
+
  public:
   auto run() -> void {
     std::array<char, 128> input_buffer{0};
@@ -201,18 +206,6 @@ class MediaImages : public csc::UserInterface {
         ImGui::Begin(WindowConfig::Title);
 
         root();
-
-        if (ImGui::InputText("##Input", input_buffer.data(),
-                             input_buffer.size())) {
-          std::cerr << "Input: " << input_buffer.data();
-        }
-        if (ImGui::Button("##Enter")) {
-          auto buffer_length{
-              strnlen(input_buffer.data(), input_buffer.size() - 1)};
-          if (buffer_length > 0) {
-            std::cerr << "Input: " << input_buffer.data() << std::endl;
-          }
-        }
 
         ImGui::End();
       }
@@ -281,14 +274,18 @@ class MediaImages : public csc::UserInterface {
     glfwTerminate();
   }
 
-  void put(std::string_view message) const override {}
-  void putln(std::string_view message) const override {}
+  void put(std::string_view message) const override {
+    ImGui::Text("%s", message.data());
+  }
+  void putln(std::string_view message) const override {
+    ImGui::Text("%s\n", message.data());
+  }
   void show_image(const csc::ImageRecord& image) const override {
     auto path{image.get_thumbnail_path().string()};
-    if (not images_.contains(path)) {
+    if (not images.contains(path)) {
       load_image(path.c_str());
     }
-    const auto& renderable_image{images_.at(path)};
+    const auto& renderable_image{images.at(path)};
     renderable_image.render();
   }
   void clear_screen() const override {}
@@ -300,20 +297,78 @@ class MediaImages : public csc::UserInterface {
   void wait_for_enter() const noexcept override {}
 
  private:
-  struct Image;  // Opaque Image type
+  template <std::size_t Size>
+  using Buffer = std::array<char, Size>;
 
   void load_image(const char* file_name) const {
     render::Image my_image{file_name};
-    images_.insert({std::string(file_name), my_image});
+    images.insert({std::string(file_name), my_image});
   }
 
-  void root() {}
+  void root() {
+    switch (state_) {
+      case State::Base: {
+        base_state();
+        break;
+      }
+      case State::AddImage: {
+        break;
+      }
+      case State::SearchImage: {
+        break;
+      }
+      case State::DisplayAll: {
+        break;
+      }
+      case State::Exit: {
+        break;
+      }
+      case State::EnumMaxValue: {
+        break;
+      }
+    }
+  }
+  void base_state() {
+    using Extractor =
+        csc::Extractor<csc::OptionPack<{"Add image", State::AddImage},
+                                       {"Search image", State::SearchImage}>>;
+
+    static Buffer<32> input_buffer{0};
+    static bool bad_input{false};
+
+    Extractor::display_options(*this);
+    if (ImGui::InputText("##Input:", input_buffer.data(),
+                         input_buffer.size())) {
+      //
+    }
+    if (ImGui::Button("Enter")) {
+      try {
+        const auto value{std::stoul(input_buffer.data())};
+        if (value not_eq 0 and
+            value < static_cast<uint32_t>(State::EnumMaxValue)) {
+          state_ = static_cast<State>(value);
+        } else {
+          bad_input = true;
+        }
+      } catch (...) {
+        bad_input = true;
+      }
+    }
+    if (bad_input) {
+      print("Bad input");
+    }
+  }
 
   GLFWwindow* window_ = nullptr;
   enum class State {
     Base,
-  };
-  mutable std::unordered_map<std::string, render::Image> images_;
+    AddImage,
+    SearchImage,
+    DisplayAll,
+    Exit,
+
+    EnumMaxValue,
+  } state_{State::Base};
 };
 
 // Main code
