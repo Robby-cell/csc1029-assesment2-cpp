@@ -9,9 +9,9 @@
 
 using namespace csc;  // NOLINT
 
-static inline auto read_number_between(UserInterface& ui, const std::size_t min,
-                                       const std::size_t max) noexcept
-    -> std::size_t {
+static inline auto read_number_between(
+    const UserInterface& ui, const std::size_t min,
+    const std::size_t max) noexcept -> std::size_t {
   std::string buf;
   std::size_t result;
   do {
@@ -30,7 +30,7 @@ static inline auto read_number_between(UserInterface& ui, const std::size_t min,
 UserInterface::UserInterface() noexcept
     : manager_{required::manager_with_required_images()} {}
 
-auto UserInterface::show_images(ImageAlbum& images) noexcept -> void {
+auto UserInterface::show_images(ImageAlbum& images) const noexcept -> void {
   enum class GetImage { Next, Previous, Exit };
   using MyExtractor =
       Extractor<OptionPack<{"Next image", GetImage::Next},
@@ -107,7 +107,7 @@ auto UserInterface::run() -> void {
   }
 }
 
-auto UserInterface::display_image_with_id(const std::size_t id) noexcept
+auto UserInterface::display_image_with_id(const std::size_t id) const noexcept
     -> void {
   const auto image = manager_.search_id(id);
   if (image) {
@@ -116,7 +116,7 @@ auto UserInterface::display_image_with_id(const std::size_t id) noexcept
 }
 
 auto UserInterface::display_images_with_title(
-    const std::string_view title) noexcept -> void {
+    const std::string_view title) const noexcept -> void {
   auto images = manager_.search_title(title);
   show_images(images);
 }
@@ -211,7 +211,7 @@ auto UserInterface::display_all_images() -> void {
   show_images(images);
 }
 
-auto UserInterface::get_non_empty_string() noexcept -> std::string {
+auto UserInterface::get_non_empty_string() const noexcept -> std::string {
   std::string buf;
   while (true) {
     read_input(buf);
@@ -222,7 +222,7 @@ auto UserInterface::get_non_empty_string() noexcept -> std::string {
   }
 }
 
-auto UserInterface::get_genre() noexcept -> ImageRecord::Genre {
+auto UserInterface::get_genre() const noexcept -> ImageRecord::Genre {
   using ExtractorType =
       Extractor<OptionPack<{"Astronomy", ImageRecord::Genre::Astronomy()},
                            {"Architecture", ImageRecord::Genre::Architecture()},
@@ -238,7 +238,7 @@ auto UserInterface::get_genre() noexcept -> ImageRecord::Genre {
   return result;
 }
 
-auto UserInterface::get_year_month_day() noexcept -> date::Date {
+auto UserInterface::get_year_month_day() const noexcept -> date::Date {
   println("Enter the year of the image.");
   std::size_t year{read_number_between(*this, 1900UZ, 2024UZ)};
   println("Enter the month of the image.");
@@ -266,7 +266,7 @@ auto UserInterface::get_year_month_day() noexcept -> date::Date {
                     std::chrono::day(day)};
 }
 
-auto UserInterface::get_time() noexcept -> date::Time {
+auto UserInterface::get_time() const noexcept -> date::Time {
   println("Enter the hour of the image.");
   std::size_t hour{read_number_between(*this, 0UZ, 23UZ)};
   println("Enter the minute of the image.");
@@ -278,13 +278,13 @@ auto UserInterface::get_time() noexcept -> date::Time {
   return date::Time{hour, minute, second, milli};
 }
 
-auto UserInterface::get_date() noexcept -> ImageRecord::DateType {
+auto UserInterface::get_date() const noexcept -> ImageRecord::DateType {
   auto date{get_year_month_day()};
   auto time{get_time()};
   return date::DateTime{date, time};
 }
 
-auto UserInterface::get_file_path() noexcept -> std::filesystem::path {
+auto UserInterface::get_file_path() const noexcept -> std::filesystem::path {
   std::string buf;
   do {
     print("Enter a file path (relative or absolute): ");

@@ -63,11 +63,23 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 add_executable(QUBImages src/QUBImages.cpp)
 target_link_libraries(QUBImages PRIVATE "${CMAKE_PROJECT_NAME}")
 
-add_executable(QUBMediaImages src/QUBMediaImages.cpp)
+set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
+
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+
+add_executable(QUBMediaImages
+	src/QUBMediaImages.cpp
+	${IMGUI_DIR}/imgui.cpp
+	${IMGUI_DIR}/imgui_demo.cpp
+	${IMGUI_DIR}/imgui_draw.cpp
+	${IMGUI_DIR}/imgui_tables.cpp
+	${IMGUI_DIR}/imgui_widgets.cpp
+	
+	${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+	${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp)
+target_include_directories(QUBMediaImages PRIVATE imgui)
+target_link_libraries(QUBMediaImages PRIVATE glfw)
+target_link_libraries(QUBMediaImages PRIVATE OpenGL::GL)
+
 target_link_libraries(QUBMediaImages PRIVATE "${CMAKE_PROJECT_NAME}")
-
-find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
-target_link_libraries(QUBMediaImages PRIVATE sfml-system sfml-network sfml-graphics sfml-window)
-
-# If you want SFML to provide an implementation of main():
-target_link_libraries(QUBMediaImages PRIVATE sfml-main)
