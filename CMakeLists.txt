@@ -67,9 +67,11 @@ set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
 
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(Stb REQUIRED)
 
 add_executable(QUBMediaImages
 	src/QUBMediaImages.cpp
+
 	${IMGUI_DIR}/imgui.cpp
 	${IMGUI_DIR}/imgui_demo.cpp
 	${IMGUI_DIR}/imgui_draw.cpp
@@ -79,6 +81,8 @@ add_executable(QUBMediaImages
 	${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
 	${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp)
 target_include_directories(QUBMediaImages PRIVATE imgui)
+target_include_directories(QUBMediaImages PRIVATE ${STB_INCLUDE_DIR})
+
 target_link_libraries(QUBMediaImages PRIVATE glfw)
 target_link_libraries(QUBMediaImages PRIVATE OpenGL::GL)
 
