@@ -89,7 +89,7 @@ class ImageAlbum {
   ImageCollection images_;
 
   /// \brief Iterator for the images in the album.
-  std::size_t current_image_;
+  std::size_t current_image_{0};
 };
 
 inline auto operator<<(std::ostream& os,

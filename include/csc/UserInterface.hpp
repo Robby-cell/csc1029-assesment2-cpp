@@ -55,6 +55,22 @@ class UserInterface {
     putln(str);
   }
 
+ protected:
+  inline auto next_image() noexcept -> const csc::ImageRecord* {
+    try {
+      return &manager_.get_all_images().get_next_image();
+    } catch (...) {
+      return nullptr;
+    }
+  }
+  inline auto previous_image() -> const csc::ImageRecord* {
+    try {
+      return &manager_.get_all_images().get_previous_image();
+    } catch (...) {
+      return nullptr;
+    }
+  }
+
  private:
   auto get_non_empty_string() const noexcept -> std::string;
   auto get_genre() const noexcept -> ImageRecord::Genre;
@@ -89,6 +105,11 @@ struct Extractor<OptionPack<Options...>> {
     }
   }
 
+  static constexpr inline auto value_at(std::size_t index) noexcept
+      -> ReturnType {
+    return MyOptions::value_at(index);
+  }
+
   static inline auto get(const UserInterface& ui) noexcept -> ReturnType {
     std::string result;
 
@@ -101,7 +122,7 @@ struct Extractor<OptionPack<Options...>> {
 
         auto option = std::stoull(result);
         if (option <= MyOptions::Size) {
-          return MyOptions::value_at(option - 1);
+          return value_at(option - 1);
         }
         ui.println("Number must be between 1 and {}.", MyOptions::Size);
       } catch (...) {

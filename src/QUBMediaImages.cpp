@@ -1,5 +1,6 @@
 #include <array>
 #include <cstdint>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -312,26 +313,27 @@ class MediaImages : public csc::UserInterface {
         break;
       }
       case State::AddImage: {
+        add_image_state();
         break;
       }
       case State::SearchImage: {
+        search_image_state();
         break;
       }
       case State::DisplayAll: {
+        display_all_state();
         break;
       }
       case State::Exit: {
-        break;
-      }
-      case State::EnumMaxValue: {
+        exit_state();
         break;
       }
     }
   }
   void base_state() {
-    using Extractor =
-        csc::Extractor<csc::OptionPack<{"Add image", State::AddImage},
-                                       {"Search image", State::SearchImage}>>;
+    using Extractor = csc::Extractor<csc::OptionPack<
+        {"Add image", State::AddImage}, {"Search image", State::SearchImage},
+        {"Display all images", State::DisplayAll}, {"Exit", State::Exit}>>;
 
     static Buffer<32> input_buffer{0};
     static bool bad_input{false};
@@ -343,10 +345,9 @@ class MediaImages : public csc::UserInterface {
     }
     if (ImGui::Button("Enter")) {
       try {
-        const auto value{std::stoul(input_buffer.data())};
-        if (value not_eq 0 and
-            value < static_cast<uint32_t>(State::EnumMaxValue)) {
-          state_ = static_cast<State>(value);
+        const auto value{std::stoul(input_buffer.data()) - 1};
+        if (value < Extractor::Size) {
+          state_ = Extractor::value_at(value);
         } else {
           bad_input = true;
         }
@@ -358,6 +359,88 @@ class MediaImages : public csc::UserInterface {
       print("Bad input");
     }
   }
+  void add_image_state() {}
+  void search_image_state() {
+    enum class SearchCriteria {
+      Id = 0,
+      Title,
+      Description,
+      Genre,
+      Date,
+    };
+    static int search_criteria{0};
+    using Extractor = csc::Extractor<csc::OptionPack<
+        {"Id", SearchCriteria::Id}, {"Title", SearchCriteria::Title},
+        {"Description", SearchCriteria::Description},
+        {"Genre", SearchCriteria::Genre}, {"Date", SearchCriteria::Date}>>;
+
+    if (ImGui::Combo("##SearchCriteria", &search_criteria,
+                     Extractor::MyOptions::OptionsCStr,
+                     Extractor::MyOptions::Size)) {
+      std::cerr << "SearchCriteria: "
+                << Extractor::MyOptions::Options[search_criteria] << std::endl;
+    }
+
+    switch (Extractor::MyOptions::Values[search_criteria]) {
+      case SearchCriteria::Id: {
+        ImGui::Text("Id");
+        break;
+      }
+      case SearchCriteria::Title: {
+        ImGui::Text("Title");
+        break;
+      }
+      case SearchCriteria::Description: {
+        ImGui::Text("Description");
+        break;
+      }
+      case SearchCriteria::Genre: {
+        ImGui::Text("Genre");
+        break;
+      }
+      case SearchCriteria::Date: {
+        ImGui::Text("Date");
+        break;
+      }
+    }
+  }
+  void display_all_state() {
+    static const csc::ImageRecord* image{next_image()};
+    static const char* message{nullptr};
+
+    if (image) {
+      show_image(*image);
+    } else {
+      ImGui::Text("There are no images");
+    }
+
+    if (ImGui::Button("Next")) {
+      const auto* next{next_image()};
+      if (next) {
+        image = next;
+        message = nullptr;
+      } else {
+        message = "No more images";
+      }
+    }
+    if (ImGui::Button("Previous")) {
+      const auto* previous{previous_image()};
+      if (previous) {
+        image = previous;
+        message = nullptr;
+      } else {
+        message = "No previous image";
+      }
+    }
+    if (ImGui::Button("Exit")) {
+      state_ = State::Base;
+    }
+
+    if (message) {
+      put(message);
+    }
+  }
+  void exit_state() {}
 
   GLFWwindow* window_ = nullptr;
   enum class State {
@@ -366,8 +449,6 @@ class MediaImages : public csc::UserInterface {
     SearchImage,
     DisplayAll,
     Exit,
-
-    EnumMaxValue,
   } state_{State::Base};
 };
 

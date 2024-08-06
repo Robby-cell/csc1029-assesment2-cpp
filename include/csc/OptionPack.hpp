@@ -30,6 +30,9 @@ struct ComptimePair {
   constexpr inline auto str() const noexcept -> std::string_view {
     return String.str();
   }
+  constexpr inline auto c_str() const noexcept -> const char* {
+    return String.c_str();
+  }
   constexpr inline auto value() const noexcept -> MyType { return Value; }
 
   const ComptimeString<MySize> String;
@@ -54,6 +57,7 @@ struct OptionPack {
   using ValueType = folding_type<decltype(MyOptions.value())...>::Type;
 
   static constexpr std::string_view Options[]{MyOptions.str()...};
+  static constexpr const char* OptionsCStr[]{MyOptions.c_str()...};
   static constexpr ValueType Values[]{MyOptions.value()...};
   static constexpr std::size_t Size{sizeof...(MyOptions)};
 
