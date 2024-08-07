@@ -1,12 +1,16 @@
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "csc/ImageAlbum.hpp"
 #include "csc/ImageRecord.hpp"
 #include "csc/OptionPack.hpp"
 #include "csc/UserInterface.hpp"
@@ -223,6 +227,10 @@ class MediaImages : public csc::UserInterface {
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
       glfwSwapBuffers(window_);
+
+      if (state_ == State::Exit) {
+        glfwSetWindowShouldClose(window_, GL_TRUE);
+      }
     }
 #ifdef __EMSCRIPTEN__
     EMSCRIPTEN_MAINLOOP_END;
@@ -288,7 +296,12 @@ class MediaImages : public csc::UserInterface {
     }
     const auto& renderable_image{images.at(path)};
     renderable_image.render();
+
+    println("Title: {}, Description: {}, Genre: {}, Date taken: {}",
+            image.get_title(), image.get_description(),
+            image.get_genre().to_string(), image.get_date_taken().to_string());
   }
+
   void clear_screen() const override {}
   std::string& read_input(std::string& buf) const override  // NOLINT
   {
@@ -298,8 +311,65 @@ class MediaImages : public csc::UserInterface {
   void wait_for_enter() const noexcept override {}
 
  private:
+  static inline std::optional<csc::ImageAlbum> current_images{std::nullopt};
+
+  void show_current_images() {
+    static const csc::ImageRecord* image{nullptr};
+    static const char* message{nullptr};
+
+    std::cerr << "current_images: " << current_images.has_value() << std::endl;
+    if (not current_images.has_value() or current_images->size() == 0) {
+      ImGui::Text("There are no images");
+      goto ExitButtonLabel;
+    } else {
+      if (not image) {
+        try {
+          image = &current_images->get_first_image();
+        } catch (...) {
+          std::unreachable();
+        }
+      }
+    }
+
+    std::cerr << "image:" << std::endl;
+    if (image) {
+      show_image(*image);
+    }
+
+    if (ImGui::Button("Next")) {
+      try {
+        image = &current_images->get_next_image();
+        message = nullptr;
+      } catch (...) {
+        message = "No more images";
+      }
+    }
+    if (ImGui::Button("Previous")) {
+      try {
+        image = &current_images->get_previous_image();
+        message = nullptr;
+      } catch (...) {
+        message = "No previous image";
+      }
+    }
+  ExitButtonLabel:
+    if (ImGui::Button("Exit")) {
+      // so next time we enter we will start from the beginning
+      image = nullptr;
+      transition_to_base();
+    }
+
+    if (message) {
+      put(message);
+    }
+  }
+
   template <std::size_t Size>
   using Buffer = std::array<char, Size>;
+
+  inline auto enter_pressed() const noexcept -> bool {
+    return ImGui::IsKeyPressed(ImGuiKey_Enter);
+  }
 
   void load_image(const char* file_name) const {
     render::Image my_image{file_name};
@@ -336,30 +406,144 @@ class MediaImages : public csc::UserInterface {
         {"Display all images", State::DisplayAll}, {"Exit", State::Exit}>>;
 
     static Buffer<32> input_buffer{0};
-    static bool bad_input{false};
+    static const char* message{nullptr};
+
+    static constexpr auto Reset = [&] {
+      input_buffer[0] = 0;
+      message = nullptr;
+    };
 
     Extractor::display_options(*this);
     if (ImGui::InputText("##Input:", input_buffer.data(),
                          input_buffer.size())) {
       //
     }
-    if (ImGui::Button("Enter")) {
+    if (ImGui::Button("Enter") or enter_pressed()) {
       try {
         const auto value{std::stoul(input_buffer.data()) - 1};
-        if (value < Extractor::Size) {
-          state_ = Extractor::value_at(value);
-        } else {
-          bad_input = true;
+        auto state = Extractor::value_at(value);
+
+        Reset();
+        switch (state) {
+          case State::Base: {
+            transition_to_base();
+            break;
+          }
+          case State::AddImage: {
+            transition_to_add_image();
+            break;
+          }
+          case State::SearchImage: {
+            transition_to_search_image();
+            break;
+          }
+          case State::DisplayAll: {
+            transition_to_display_all();
+            break;
+          }
+          case State::Exit: {
+            transition_to_exit();
+            break;
+          }
         }
       } catch (...) {
-        bad_input = true;
+        message = "Bad input";
       }
     }
-    if (bad_input) {
-      print("Bad input");
+    if (message) {
+      put(message);
     }
   }
-  void add_image_state() {}
+  void add_image_state() {
+    using GenreExtractor = csc::Extractor<csc::OptionPack<
+        {"Astronomy", csc::ImageRecord::Genre::Astronomy()},
+        {"Architecture", csc::ImageRecord::Genre::Architecture()},
+        {"Sport", csc::ImageRecord::Genre::Sport()},
+        {"Landscape", csc::ImageRecord::Genre::Landscape()},
+        {"Portrait", csc::ImageRecord::Genre::Portrait()},
+        {"Nature", csc::ImageRecord::Genre::Nature()},
+        {"Aerial", csc::ImageRecord::Genre::Aerial()},
+        {"Food", csc::ImageRecord::Genre::Food()},
+        {"Other", csc::ImageRecord::Genre::Other()}>>;
+
+    static Buffer<32> title{0};
+    static Buffer<64> description{0};
+    static int genre{0};
+
+    static Buffer<5> year{0};
+    static Buffer<3> month{0};
+    static Buffer<3> day{0};
+
+    static Buffer<64> thumbnail_path{0};
+
+    static const char* message{nullptr};
+
+    static constexpr auto Reset = [&] {
+      title[0] = 0;
+      description[0] = 0;
+      genre = 0;
+
+      year[0] = 0;
+      month[0] = 0;
+      day[0] = 0;
+
+      thumbnail_path[0] = 0;
+      message = nullptr;
+    };
+
+    putln("Add image");
+    put("Title:");
+    ImGui::InputText("##Title", title.data(), title.size());
+    put("Description:");
+    ImGui::InputText("##Description", description.data(), description.size());
+
+    put("Genre:");
+    ImGui::Combo("##Genre", &genre, GenreExtractor::MyOptions::OptionsCStr,
+                 GenreExtractor::MyOptions::Size);
+
+    put("Year:");
+    ImGui::InputText("##Year", year.data(), year.size());
+    put("Month:");
+    ImGui::InputText("##Month", month.data(), month.size());
+    put("Day:");
+    ImGui::InputText("##Day", day.data(), day.size());
+
+    put("Thumbnail path:");
+    ImGui::InputText("##ThumbnailPath", thumbnail_path.data(),
+                     thumbnail_path.size());
+
+    if (ImGui::Button("Add")) {
+      try {
+        auto year_ul{std::stoul(year.data())};
+        auto month_ul{std::stoul(month.data())};
+        auto day_ul{std::stoul(day.data())};
+
+        std::filesystem::path valid_path{thumbnail_path.data()};
+        emplace_image(csc::ImageRecord{
+            title.data(),
+            description.data(),
+            GenreExtractor::value_at(genre),
+            {{std::chrono::year(year_ul), std::chrono::month(month_ul),
+              std::chrono::day(day_ul)},
+             {}},
+            std::move(valid_path)});
+
+        Reset();
+
+        transition_to_base();
+      } catch (...) {
+        message = "Failed to add image";
+      }
+    }
+
+    if (ImGui::Button("Cancel")) {
+      transition_to_base();
+    }
+
+    if (message) {
+      put(message);
+    }
+  }
   void search_image_state() {
     enum class SearchCriteria {
       Id = 0,
@@ -383,64 +567,56 @@ class MediaImages : public csc::UserInterface {
 
     switch (Extractor::MyOptions::Values[search_criteria]) {
       case SearchCriteria::Id: {
-        ImGui::Text("Id");
+        search_id();
         break;
       }
       case SearchCriteria::Title: {
-        ImGui::Text("Title");
+        search_title();
         break;
       }
       case SearchCriteria::Description: {
-        ImGui::Text("Description");
+        search_description();
         break;
       }
       case SearchCriteria::Genre: {
-        ImGui::Text("Genre");
+        search_genre();
         break;
       }
       case SearchCriteria::Date: {
-        ImGui::Text("Date");
+        search_genre();
         break;
       }
     }
   }
-  void display_all_state() {
-    static const csc::ImageRecord* image{next_image()};
-    static const char* message{nullptr};
+  void search_id() {
+    static Buffer<16> id{0};
+    ImGui::Text("Enter Id:");
+    ImGui::InputText("##Id", id.data(), id.size());
 
-    if (image) {
-      show_image(*image);
-    } else {
-      ImGui::Text("There are no images");
-    }
-
-    if (ImGui::Button("Next")) {
-      const auto* next{next_image()};
-      if (next) {
-        image = next;
-        message = nullptr;
-      } else {
-        message = "No more images";
+    if (enter_pressed()) {
+      try {
+      } catch (...) {
       }
-    }
-    if (ImGui::Button("Previous")) {
-      const auto* previous{previous_image()};
-      if (previous) {
-        image = previous;
-        message = nullptr;
-      } else {
-        message = "No previous image";
-      }
-    }
-    if (ImGui::Button("Exit")) {
-      state_ = State::Base;
-    }
-
-    if (message) {
-      put(message);
     }
   }
+  void search_title() { ImGui::Text("Title"); }
+  void search_description() { ImGui::Text("Description"); }
+  void search_genre() { ImGui::Text("Genre"); }
+  void search_date() { ImGui::Text("Date"); }
+
+  void display_all_state() { show_current_images(); }
   void exit_state() {}
+
+  constexpr inline void transition_to_base() { state_ = State::Base; }
+  constexpr inline void transition_to_add_image() { state_ = State::AddImage; }
+  constexpr inline void transition_to_search_image() {
+    state_ = State::SearchImage;
+  }
+  constexpr inline void transition_to_display_all() {
+    current_images.emplace(get_all_images());
+    state_ = State::DisplayAll;
+  }
+  constexpr inline void transition_to_exit() { state_ = State::Exit; }
 
   GLFWwindow* window_ = nullptr;
   enum class State {

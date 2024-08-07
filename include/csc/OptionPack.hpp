@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <span>
+#include <stdexcept>
 #include <string_view>
 #include <type_traits>
 
@@ -66,8 +67,10 @@ struct OptionPack {
     return std::span<const std::string_view, Size>(Options);
   }
 
-  static constexpr inline auto value_at(std::size_t index) noexcept
-      -> ValueType {
+  static constexpr inline auto value_at(std::size_t index) -> ValueType {
+    if (index >= Size) {
+      throw std::out_of_range("index out of range");
+    }
     return Values[index];
   }
 };

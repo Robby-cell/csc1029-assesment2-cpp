@@ -173,6 +173,10 @@ class ImageRecord {
         genre_(genre),
         date_taken_(time),
         thumbnail_path_(std::move(thumbnail_path)) {}
+  ImageRecord(const ImageRecord& other) noexcept = default;
+  ImageRecord(ImageRecord&& other) noexcept = default;
+  auto operator=(const ImageRecord& other) noexcept -> ImageRecord& = default;
+  auto operator=(ImageRecord&& other) noexcept -> ImageRecord& = default;
 
  private:
   friend class ImageAlbum;

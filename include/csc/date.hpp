@@ -20,7 +20,7 @@ concept Streamable = requires(Type& os, PrintMe p) {
 
 class Time {
  public:
-  MAYBE_CONSTEXPR inline Time(std::uint32_t ms) : ms_{ms} {  // NOLINT
+  MAYBE_CONSTEXPR inline Time(std::uint32_t ms = 0U) : ms_{ms} {  // NOLINT
     if (ms >= milliseconds_per_day::num) {
       throw std::out_of_range{"Time out of range"};
     }

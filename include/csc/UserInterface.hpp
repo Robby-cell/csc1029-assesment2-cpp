@@ -56,19 +56,15 @@ class UserInterface {
   }
 
  protected:
-  inline auto next_image() noexcept -> const csc::ImageRecord* {
-    try {
-      return &manager_.get_all_images().get_next_image();
-    } catch (...) {
-      return nullptr;
-    }
+  inline auto get_all_images() const noexcept -> const ImageAlbum& {
+    return manager_.get_all_images();
   }
-  inline auto previous_image() -> const csc::ImageRecord* {
-    try {
-      return &manager_.get_all_images().get_previous_image();
-    } catch (...) {
-      return nullptr;
-    }
+  inline auto emplace_image(ImageRecord&& record) {
+    return manager_.add_image(std::move(record));
+  }
+  template <typename... Args>
+  inline auto emplace_image(Args&&... args) {
+    return manager_.add_image(std::forward<Args>(args)...);
   }
 
  private:
@@ -105,8 +101,7 @@ struct Extractor<OptionPack<Options...>> {
     }
   }
 
-  static constexpr inline auto value_at(std::size_t index) noexcept
-      -> ReturnType {
+  static constexpr inline auto value_at(std::size_t index) -> ReturnType {
     return MyOptions::value_at(index);
   }
 
