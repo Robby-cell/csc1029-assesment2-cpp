@@ -56,14 +56,22 @@ class UserInterface {
   }
 
  protected:
-  inline auto get_all_images() const noexcept -> const ImageAlbum& {
+  constexpr inline auto get_image_manager() const noexcept
+      -> const ImageManager& {
+    return manager_;
+  }
+  constexpr inline auto get_image_manager() noexcept -> ImageManager& {
+    return manager_;
+  }
+
+  constexpr inline auto get_all_images() const noexcept -> const ImageAlbum& {
     return manager_.get_all_images();
   }
-  inline auto emplace_image(ImageRecord&& record) {
+  constexpr inline auto emplace_image(ImageRecord&& record) {
     return manager_.add_image(std::move(record));
   }
   template <typename... Args>
-  inline auto emplace_image(Args&&... args) {
+  constexpr inline auto emplace_image(Args&&... args) {
     return manager_.add_image(std::forward<Args>(args)...);
   }
 

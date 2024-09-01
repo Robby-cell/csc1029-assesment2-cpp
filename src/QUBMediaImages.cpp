@@ -5,15 +5,18 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "csc/ImageAlbum.hpp"
+#include "csc/ImageManager.hpp"
 #include "csc/ImageRecord.hpp"
 #include "csc/OptionPack.hpp"
 #include "csc/UserInterface.hpp"
+#include "csc/core.h"
 #include "imgui.h"
 
 #define GL_SILENCE_DEPRECATION
@@ -42,6 +45,73 @@ constexpr inline int Width{1280};
 constexpr inline int Height{720};
 constexpr inline const char* Title{"QUBMediaImages"};
 }  // namespace WindowConfig
+
+inline auto enter_pressed() noexcept -> bool {
+  return ImGui::IsKeyPressed(ImGuiKey_Enter);
+}
+
+template <std::size_t OptionNameSize, std::size_t OptionDescSize,
+          typename MyValue>
+struct Option {
+  using ValueType = MyValue;
+
+  constexpr Option(const char (&name)[OptionNameSize],
+                   const char (&desc)[OptionDescSize], MyValue value)
+      : OptionName{name}, OptionDesc{desc}, OptionValue{value} {}
+
+  constexpr auto GetOptionName() const noexcept -> std::string_view {
+    return OptionName.str();
+  }
+
+  constexpr auto GetOptionDescription() const noexcept -> std::string_view {
+    return OptionDesc.str();
+  }
+
+  constexpr auto Display() const noexcept -> std::string {
+    return std::format("{} - {}", OptionName.str(), OptionDesc.str());
+  }
+
+  constexpr auto GetValue() const noexcept -> ValueType { return OptionValue; }
+
+  const csc::ComptimeString<OptionNameSize> OptionName;
+  const csc::ComptimeString<OptionDescSize> OptionDesc;
+  const ValueType OptionValue;
+};
+
+template <Option... Options>
+struct GetFromTheseOptions {
+  static constexpr auto Arity{sizeof...(Options)};
+
+  static_assert(Arity > 0, "Can't have zero options");
+
+  using ValueType =
+      csc::core::folding_type<typename decltype(Options)::ValueType...>::Type;
+
+  static constexpr std::array<ValueType, Arity> Values{Options.GetValue()...};
+  static constexpr std::array<std::string_view, Arity> OptionNames{
+      Options.GetOptionName()...};
+  static constexpr std::array<std::string_view, Arity> OptionDescriptions{
+      Options.GetOptionDescription()...};
+  static inline std::array<std::string, Arity> option_display_strings{
+      Options.Display()...};
+
+  static constexpr auto GetValue() -> std::optional<ValueType> {
+    static int index{0};
+    for (auto i : std::ranges::iota_view{0ULL, Arity}) {
+      ImGui::Combo("##Combo", &index, option_display_strings[i].c_str(), Arity);
+    }
+    if (ImGui::Button("Ok") or enter_pressed()) {
+      auto value = GetValueAtIndex(index);
+      index = 0;
+      return value;
+    }
+    return std::nullopt;
+  }
+
+  static constexpr auto GetValueAtIndex(std::size_t index) -> ValueType {
+    return Values[index];
+  }
+};
 
 namespace image {
 auto LoadTextureFromMemory(const void* data, size_t data_size,
@@ -184,9 +254,10 @@ class MediaImages : public csc::UserInterface {
 
     // Main loop
 #ifdef __EMSCRIPTEN__
-    // For an Emscripten build we are disabling file-system access, so let's not
-    // attempt to do a fopen() of the imgui.ini file. You may manually call
-    // LoadIniSettingsFromMemory() to load settings from your own storage.
+    // For an Emscripten build we are disabling file-system access, so let's
+    // not attempt to do a fopen() of the imgui.ini file. You may manually
+    // call LoadIniSettingsFromMemory() to load settings from your own
+    // storage.
     io.IniFilename = nullptr;
     EMSCRIPTEN_MAINLOOP_BEGIN
 #else
@@ -251,7 +322,8 @@ class MediaImages : public csc::UserInterface {
 #elif defined(__APPLE__)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_PROFILE,
+                   GLFW_OPENGL_CORE_PROFILE);             // 3.2+ only
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  // Required on Mac
 #else
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -317,7 +389,6 @@ class MediaImages : public csc::UserInterface {
     static const csc::ImageRecord* image{nullptr};
     static const char* message{nullptr};
 
-    std::cerr << "current_images: " << current_images.has_value() << std::endl;
     if (not current_images.has_value() or current_images->size() == 0) {
       ImGui::Text("There are no images");
       goto ExitButtonLabel;
@@ -331,7 +402,6 @@ class MediaImages : public csc::UserInterface {
       }
     }
 
-    std::cerr << "image:" << std::endl;
     if (image) {
       show_image(*image);
     }
@@ -366,10 +436,6 @@ class MediaImages : public csc::UserInterface {
 
   template <std::size_t Size>
   using Buffer = std::array<char, Size>;
-
-  inline auto enter_pressed() const noexcept -> bool {
-    return ImGui::IsKeyPressed(ImGuiKey_Enter);
-  }
 
   void load_image(const char* file_name) const {
     render::Image my_image{file_name};
@@ -513,6 +579,7 @@ class MediaImages : public csc::UserInterface {
                      thumbnail_path.size());
 
     if (ImGui::Button("Add")) {
+      std::cerr << "Button 'Add' pressed" << std::endl;
       try {
         auto year_ul{std::stoul(year.data())};
         auto month_ul{std::stoul(month.data())};
@@ -589,19 +656,101 @@ class MediaImages : public csc::UserInterface {
     }
   }
   void search_id() {
-    static Buffer<16> id{0};
+    static std::string id(16, '\0');
+    static const char* message = nullptr;
     ImGui::Text("Enter Id:");
     ImGui::InputText("##Id", id.data(), id.size());
 
     if (enter_pressed()) {
       try {
+        auto number_id = std::stoull(id);
+
+        id[0] = 0;
+        auto image = get_image_manager().search_id(number_id);
+
+        if (image) {
+          auto true_image = **image;
+          csc::ImageManager manager;
+          manager.add_image(true_image);
+
+          transition_to_display_with_images(manager.take_album());
+        }
       } catch (...) {
+        message = "Enter a number for the id";
+      }
+    }
+    if (message) {
+      put(message);
+    }
+  }
+  void search_title() {
+    static std::string title(32, '\0');
+    ImGui::Text("Title");
+    ImGui::InputText("##Title", title.data(), title.size());
+
+    if (enter_pressed()) {
+      auto album{get_image_manager().search_title(title)};
+      title[0] = 0;
+      transition_to_display_with_images(std::move(album));
+    }
+  }
+  void search_description() {
+    static Buffer<64> description{0};
+    ImGui::Text("Description");
+    ImGui::InputText("##Description", description.data(), description.size());
+
+    if (enter_pressed()) {
+      auto album{get_image_manager().search_description(description.data())};
+      description[0] = 0;
+      transition_to_display_with_images(std::move(album));
+    }
+  }
+  void search_genre() {
+    using Extraction = GetFromTheseOptions<
+        {"Astronomy",
+         "Photography or imaging of astronomical objects, celestial "
+         "events, or areas of the night sky.",
+         csc::ImageRecord::Genre::Astronomy()},
+        {"Architecture",
+         "Focuses on the capture of images that accurately represent "
+         "the design and feel of buildings.",
+         csc::ImageRecord::Genre::Architecture()},
+        {"Sport",
+         "Covers all types of sports and can be considered a branch of "
+         "photojournalism.",
+         csc::ImageRecord::Genre::Sport()},
+        {"Landscape",
+         "The study of the textured surface of the Earth and features "
+         "images of natural scenes.",
+         csc::ImageRecord::Genre::Landscape()},
+        {"Portrait",
+         "Images of a person or a group of people where the face and "
+         "facial features are predominant.",
+         csc::ImageRecord::Genre::Portrait()},
+        {"Nature",
+         "Focused on elements of the outdoors including sky, water, "
+         "and land, or the flora and fauna.",
+         csc::ImageRecord::Genre::Nature()},
+        {"Aerial", "Images taken from an aircraft or other airborne platforms.",
+         csc::ImageRecord::Genre::Aerial()},
+        {"Food",
+         "Captures everything related to food, from fresh ingredients "
+         "and plated dishes to the cooking process.",
+         csc::ImageRecord::Genre::Food()},
+        {"Other",
+         "Covers just about any other type of image and photography "
+         "genre.",
+         csc::ImageRecord::Genre::Other()}>;
+
+    if (enter_pressed()) {
+      auto genre{Extraction::GetValue()};
+
+      if (genre) {
+        transition_to_display_with_images(
+            get_image_manager().search_genre(*genre));
       }
     }
   }
-  void search_title() { ImGui::Text("Title"); }
-  void search_description() { ImGui::Text("Description"); }
-  void search_genre() { ImGui::Text("Genre"); }
   void search_date() { ImGui::Text("Date"); }
 
   void display_all_state() { show_current_images(); }
@@ -612,9 +761,20 @@ class MediaImages : public csc::UserInterface {
   constexpr inline void transition_to_search_image() {
     state_ = State::SearchImage;
   }
-  constexpr inline void transition_to_display_all() {
-    current_images.emplace(get_all_images());
+  inline void transition_to_display_with_images(
+      const csc::ImageManager& images) {
+    transition_to_display_with_images(images.get_all_images());
+  }
+  inline void transition_to_display_with_images(csc::ImageAlbum&& images) {
+    current_images.emplace(std::move(images));
     state_ = State::DisplayAll;
+  }
+  inline void transition_to_display_with_images(const csc::ImageAlbum& images) {
+    current_images.emplace(images);
+    state_ = State::DisplayAll;
+  }
+  constexpr inline void transition_to_display_all() {
+    transition_to_display_with_images(get_all_images());
   }
   constexpr inline void transition_to_exit() { state_ = State::Exit; }
 

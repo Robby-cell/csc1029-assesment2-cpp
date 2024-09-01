@@ -19,6 +19,11 @@ class ImageAlbum {
   explicit inline ImageAlbum(ImageCollection images = {}) noexcept
       : images_(std::move(images)) {}
 
+  constexpr ImageAlbum(const ImageAlbum& other) noexcept = default;
+  constexpr ImageAlbum(ImageAlbum&& other) noexcept = default;
+  auto operator=(const ImageAlbum& other) noexcept -> ImageAlbum& = default;
+  auto operator=(ImageAlbum&& other) noexcept -> ImageAlbum& = default;
+
   template <typename... Args>
     requires(std::is_same_v<Args, ImageRecord> and ...)
   explicit inline ImageAlbum(Args&&... images) noexcept
@@ -51,10 +56,15 @@ class ImageAlbum {
     return images_[--current_image_];
   }
 
-  inline auto emplace(ImageRecord image) -> void {
+  inline auto emplace(ImageRecord&& image) -> void {
     auto it{
         std::lower_bound(images_.begin(), images_.end(), image, std::less{})};
     images_.insert(it, std::move(image));
+  }
+  inline auto emplace(const ImageRecord& image) -> void {
+    auto it{
+        std::lower_bound(images_.begin(), images_.end(), image, std::less{})};
+    images_.insert(it, image);
   }
 
   template <typename... MyArgs>

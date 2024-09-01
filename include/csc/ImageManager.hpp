@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <optional>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "csc/ImageAlbum.hpp"
@@ -14,7 +15,14 @@ namespace csc {
 
 #define NO_DISCARD [[nodiscard]]
 class ImageManager {
+ private:
+  friend class ImageManager;
+
  public:
+  constexpr inline auto take_album() noexcept -> decltype(auto) {
+    return std::move(album_);
+  }
+
   inline ImageManager() noexcept = default;
   template <typename... Args>
     requires(std::is_same_v<Args, ImageRecord> and ...)

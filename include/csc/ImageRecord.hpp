@@ -78,35 +78,42 @@ class ImageRecord {
     MAYBE_CONSTEXPR inline auto operator=(Genre&& other) noexcept
         -> Genre& = default;
 
+#define RETURN_DESCRIPTION()                                                 \
+  switch (tag_) {                                                            \
+    case Tag::Astronomy:                                                     \
+      return "Photography or imaging of astronomical objects, celestial "    \
+             "events, or areas of the night sky.";                           \
+    case Tag::Architecture:                                                  \
+      return "Focuses on the capture of images that accurately represent "   \
+             "the design and feel of buildings.";                            \
+    case Tag::Sport:                                                         \
+      return "Covers all types of sports and can be considered a branch of " \
+             "photojournalism.";                                             \
+    case Tag::Landscape:                                                     \
+      return "The study of the textured surface of the Earth and features "  \
+             "images of natural scenes.";                                    \
+    case Tag::Portrait:                                                      \
+      return "Images of a person or a group of people where the face and "   \
+             "facial features are predominant.";                             \
+    case Tag::Nature:                                                        \
+      return "Focused on elements of the outdoors including sky, water, "    \
+             "and land, or the flora and fauna.";                            \
+    case Tag::Aerial:                                                        \
+      return "Images taken from an aircraft or other airborne platforms.";   \
+    case Tag::Food:                                                          \
+      return "Captures everything related to food, from fresh ingredients "  \
+             "and plated dishes to the cooking process.";                    \
+    case Tag::Other:                                                         \
+      return "Covers just about any other type of image and photography "    \
+             "genre.";                                                       \
+  }
+
+    MAYBE_CONSTEXPR inline auto to_c_str() const noexcept -> const char* {
+      RETURN_DESCRIPTION();
+    }
+
     MAYBE_CONSTEXPR inline auto to_string() const noexcept -> std::string_view {
-      switch (tag_) {
-        case Tag::Astronomy:
-          return "Photography or imaging of astronomical objects, celestial "
-                 "events, or areas of the night sky.";
-        case Tag::Architecture:
-          return "Focuses on the capture of images that accurately represent "
-                 "the design and feel of buildings.";
-        case Tag::Sport:
-          return "Covers all types of sports and can be considered a branch of "
-                 "photojournalism.";
-        case Tag::Landscape:
-          return "The study of the textured surface of the Earth and features "
-                 "images of natural scenes.";
-        case Tag::Portrait:
-          return "Images of a person or a group of people where the face and "
-                 "facial features are predominant.";
-        case Tag::Nature:
-          return "Focused on elements of the outdoors including sky, water, "
-                 "and land, or the flora and fauna.";
-        case Tag::Aerial:
-          return "Images taken from an aircraft or other airborne platforms.";
-        case Tag::Food:
-          return "Captures everything related to food, from fresh ingredients "
-                 "and plated dishes to the cooking process.";
-        case Tag::Other:
-          return "Covers just about any other type of image and photography "
-                 "genre.";
-      }
+      RETURN_DESCRIPTION();
     }
 
     //  private:

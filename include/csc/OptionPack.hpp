@@ -6,7 +6,8 @@
 #include <span>
 #include <stdexcept>
 #include <string_view>
-#include <type_traits>
+
+#include "csc/core.h"
 
 namespace csc {
 
@@ -40,22 +41,10 @@ struct ComptimePair {
   const MyType Value;
 };
 
-/// Fold a type, ensure they are the same type. And capture the type.
-template <typename... Types>
-struct folding_type;
-template <typename MyType, typename... Types>
-struct folding_type<MyType, Types...> : std::true_type {
- private:
-  static_assert((... and std::is_same_v<MyType, Types>));
-
- public:
-  using Type = MyType;
-};
-
 template <ComptimePair... MyOptions>
-  requires(folding_type<decltype(MyOptions.value())...>::value)
+  requires(core::folding_type<decltype(MyOptions.value())...>::value)
 struct OptionPack {
-  using ValueType = folding_type<decltype(MyOptions.value())...>::Type;
+  using ValueType = core::folding_type<decltype(MyOptions.value())...>::Type;
 
   static constexpr std::string_view Options[]{MyOptions.str()...};
   static constexpr const char* OptionsCStr[]{MyOptions.c_str()...};
