@@ -28,10 +28,11 @@ project(assessment2)
 # MY_SOURCES is defined to be a list of all the source files for my game
 # DON'T ADD THE SOURCES BY HAND, they are already added with this macro
 set(MY_SOURCES
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/Command.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/Console.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/RequiredImages.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/UserInterface.cpp")
+	src/Command.cpp
+	src/Console.cpp
+	src/RequiredImages.cpp
+	src/UserInterface.cpp
+	src/ImageRecord.cpp)
 
 add_library("${CMAKE_PROJECT_NAME}" STATIC)
 

@@ -1,7 +1,9 @@
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <iterator>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -17,6 +19,7 @@
 #include "csc/OptionPack.hpp"
 #include "csc/UserInterface.hpp"
 #include "csc/core.h"
+#include "csc/date.hpp"
 #include "imgui.h"
 
 #define GL_SILENCE_DEPRECATION
@@ -95,11 +98,20 @@ struct GetFromTheseOptions {
   static inline std::array<std::string, Arity> option_display_strings{
       Options.Display()...};
 
+  static constexpr auto map_items() -> decltype(auto) {
+    std::array<const char*, Arity> array{nullptr};
+    std::transform(option_display_strings.begin(), option_display_strings.end(),
+                   array.begin(),
+                   [](const std::string& s) { return s.c_str(); });
+    return array;
+  }
+
   static constexpr auto GetValue() -> std::optional<ValueType> {
+    const auto OptionDisplayStrings_CStr{map_items()};  // NOLINT
     static int index{0};
-    for (auto i : std::ranges::iota_view{0ULL, Arity}) {
-      ImGui::Combo("##Combo", &index, option_display_strings[i].c_str(), Arity);
-    }
+
+    ImGui::Combo("##Combo", &index, OptionDisplayStrings_CStr.data(), Arity);
+
     if (ImGui::Button("Ok") or enter_pressed()) {
       auto value = GetValueAtIndex(index);
       index = 0;
@@ -650,7 +662,7 @@ class MediaImages : public csc::UserInterface {
         break;
       }
       case SearchCriteria::Date: {
-        search_genre();
+        search_date();
         break;
       }
     }
@@ -742,16 +754,84 @@ class MediaImages : public csc::UserInterface {
          "genre.",
          csc::ImageRecord::Genre::Other()}>;
 
-    if (enter_pressed()) {
-      auto genre{Extraction::GetValue()};
+    auto genre{Extraction::GetValue()};
 
-      if (genre) {
-        transition_to_display_with_images(
-            get_image_manager().search_genre(*genre));
-      }
+    if (genre) {
+      transition_to_display_with_images(
+          get_image_manager().search_genre(*genre));
     }
   }
-  void search_date() { ImGui::Text("Date"); }
+
+  auto get_date(const char* const date_label, const char* const time_label,
+                char (&date)[11], char (&time)[9]) -> void {
+    ImGui::Text("Date [Enter YYYY/MM/DD]");
+    ImGui::SameLine();
+    ImGui::InputText(date_label, date, std::size(date));
+
+    ImGui::Text("Time [Enter HH:MM:SS]");
+    ImGui::SameLine();
+    ImGui::InputText(time_label, time, std::size(time));
+  }
+
+  auto input_to_date(char (&date)[11],
+                     char (&time)[9]) -> std::optional<csc::date::DateTime> {
+    int year;
+    int month;
+    int day;
+    auto status = std::sscanf(date, "%d/%d/%d", &year, &month, &day);  // NOLINT
+    if (status != 3) {
+      return std::nullopt;
+    }
+
+    int hour;
+    int minute;
+    int second;
+    status = std::sscanf(time, "%d:%d:%d", &hour, &minute, &second);  // NOLINT
+    if (status != 3) {
+      return std::nullopt;
+    }
+
+    // NOLINTBEGIN
+    using d = std::chrono::day;
+    using m = std::chrono::month;
+    using y = std::chrono::year;
+    return csc::date::DateTime{
+        std::chrono::year_month_day{y(year), m(month), d(day)},
+        csc::date::Time{std::size_t(hour), std::size_t(minute),
+                        std::size_t(second)}};
+    // NOLINTEND
+
+    return std::nullopt;
+  }
+
+  void search_date() {
+    static char date1[11]{0};
+    static char time1[9]{"00:00:00"};
+
+    static char date2[11]{0};
+    static char time2[9]{"00:00:00"};
+
+    ImGui::Text("Date");
+    ImGui::Text("From:");
+    get_date("##Date1", "##Time1", date1, time1);
+
+    ImGui::Text("To:");
+    get_date("##Date2", "##Time2", date2, time2);
+
+    if (ImGui::Button("Search") or enter_pressed()) {
+      auto from = input_to_date(date1, time1);
+      auto to = input_to_date(date2, time2);
+
+      if (from and to) {
+        auto images = get_image_manager().search_between_dates(*from, *to);
+        transition_to_display_with_images(std::move(images));
+      }
+      date1[0] = 0;
+      time1[0] = 0;
+      date2[0] = 0;
+      time2[0] = 0;
+    }
+  }
 
   void display_all_state() { show_current_images(); }
   void exit_state() {}

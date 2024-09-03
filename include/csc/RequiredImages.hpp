@@ -1,12 +1,15 @@
 #ifndef CSC_REQUIREDIMAGES_HPP
 #define CSC_REQUIREDIMAGES_HPP
 
-#include "csc/ImageManager.hpp"
+namespace csc {
 
-namespace csc::required {
+class ImageManager;
+
+namespace required {
 
 auto manager_with_required_images() -> csc::ImageManager;
 
-}  // namespace csc::required
+}
+}  // namespace csc
 
 #endif  // CSC_REQUIREDIMAGES_HPP

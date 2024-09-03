@@ -13,7 +13,7 @@ namespace csc {
 
 class ImageRecord {
  private:
-  static inline size_t next_id{1ULL};
+  static size_t next_id;
 
  public:
   using DateType = date::DateTime;
@@ -133,11 +133,7 @@ class ImageRecord {
   //   return self.date_taken_ != other.date_taken_;
   // }
 
-  inline auto to_string() const noexcept -> std::string {
-    return std::format("Title: {}, Description: {}, Genre: {}, Date taken: {}",
-                       title_, description_, genre_.to_string(),
-                       date_taken_.to_string());
-  }
+  auto to_string() const noexcept -> std::string;
   explicit inline operator std::string() const noexcept { return to_string(); }
 
   constexpr inline auto set_title(std::string title) noexcept -> void {
@@ -171,15 +167,9 @@ class ImageRecord {
     return thumbnail_path_;
   }
 
-  constexpr explicit inline ImageRecord(std::string title,
-                                        std::string description, Genre genre,
-                                        DateType time,
-                                        std::filesystem::path thumbnail_path)
-      : title_(std::move(title)),
-        description_(std::move(description)),
-        genre_(genre),
-        date_taken_(time),
-        thumbnail_path_(std::move(thumbnail_path)) {}
+  ImageRecord(std::string title, std::string description, Genre genre,
+              DateType time, std::filesystem::path thumbnail_path);
+
   ImageRecord(const ImageRecord& other) noexcept = default;
   ImageRecord(ImageRecord&& other) noexcept = default;
   auto operator=(const ImageRecord& other) noexcept -> ImageRecord& = default;
@@ -188,19 +178,14 @@ class ImageRecord {
  private:
   friend class ImageAlbum;
 
-  friend inline auto operator<<(std::ostream& os,
-                                const ImageRecord& image) -> std::ostream& {
-    std::print(os, "Title: {}, Description: {}, Genre: {}, Date taken: {}",
-               image.title_, image.description_, image.genre_.to_string(),
-               image.date_taken_.to_string());
-    return os;
-  }
+  friend auto operator<<(std::ostream& os,
+                         const ImageRecord& image) -> std::ostream&;
 
   std::string title_;
   std::string description_;
   std::filesystem::path thumbnail_path_;
   DateType date_taken_;
-  std::size_t id_;
+  std::size_t id_ = next_id++;
   Genre genre_;
 };
 
