@@ -163,8 +163,7 @@ auto LoadTextureFromMemory(const void* data, size_t data_size,
 
 auto LoadTextureFromFile(const char* file_name, GLuint* out_texture,
                          int* out_width, int* out_height) -> bool {
-  FILE* f{nullptr};
-  fopen_s(&f, file_name, "rb");
+  FILE* f{fopen(file_name, "rb")};
   if (f == nullptr) {
     return false;
   }

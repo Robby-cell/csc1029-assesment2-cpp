@@ -146,8 +146,8 @@ class ImageRecord {
   constexpr inline auto set_genre(Genre genre) noexcept -> void {
     genre_ = genre;
   }
-  constexpr inline auto set_thumbnail_path(std::filesystem::path path) noexcept
-      -> void {
+  constexpr inline auto set_thumbnail_path(
+      std::filesystem::path&& path) noexcept -> void {
     thumbnail_path_ = std::move(path);
   }
 

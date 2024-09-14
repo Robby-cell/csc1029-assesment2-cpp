@@ -8,7 +8,7 @@ namespace csc::core {
 #if defined(_MSC_VER) or defined(__clang__)
 #define MAYBE_CONSTEXPR constexpr
 #else
-#define MAYBE_CONSTEXPR
+#define MAYBE_CONSTEXPR constexpr
 #endif
 
 /// Fold a type, ensure they are the same type. And capture the type.
