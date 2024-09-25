@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.27)
+project(csc)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -60,13 +61,11 @@ add_library(ImGui STATIC
 	
 	${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
 	${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp)
-target_link_libraries(ImGui PUBLIC glfw)
-target_link_libraries(ImGui PUBLIC OpenGL::GL)
-
-add_executable(QUBMediaImages
-	src/QUBMediaImages.cpp)
-target_include_directories(ImGui PUBLIC imgui)
+target_include_directories(QUBMediaImages PRIVATE imgui)
 target_include_directories(QUBMediaImages PRIVATE ${STB_INCLUDE_DIR})
+
+target_link_libraries(QUBMediaImages PRIVATE glfw)
+target_link_libraries(QUBMediaImages PRIVATE OpenGL::GL)
 
 target_link_libraries(QUBMediaImages PRIVATE "${CMAKE_PROJECT_NAME}")
 target_link_libraries(QUBMediaImages PRIVATE ImGui)
