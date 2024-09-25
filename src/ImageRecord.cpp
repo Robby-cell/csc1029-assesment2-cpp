@@ -1,7 +1,5 @@
 #include "csc/ImageRecord.hpp"
 
-#include <iostream>
-
 namespace csc {
 
 consteval auto operator""_UZ(unsigned long long n) noexcept -> size_t {
@@ -18,9 +16,7 @@ ImageRecord::ImageRecord(std::string title, std::string description,
       description_(std::move(description)),
       genre_(genre),
       date_taken_(time),
-      thumbnail_path_(std::move(thumbnail_path)) {
-  std::cout << "My id is: " << id_ << std::endl;
-}
+      thumbnail_path_(std::move(thumbnail_path)) {}
 
 auto ImageRecord::to_string() const noexcept -> std::string {
   return std::format(

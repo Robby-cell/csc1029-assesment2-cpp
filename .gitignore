@@ -1,5 +1,4 @@
 /.cache
 /out
 /compile_commands.json
-/Makefile
 /imgui.ini
